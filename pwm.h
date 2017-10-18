@@ -1,0 +1,43 @@
+#ifndef __PWM_H__
+#define __PWM_H__
+#include "timer.h"
+
+#define PWM11	0x000000011
+#define PWM12	0x000000012
+#define PWM13	0x000000013
+#define PWM14	0x000000014
+
+#define PWM21	0x000000021
+#define PWM22	0x000000022
+#define PWM23	0x000000023
+#define PWM24	0x000000024
+
+#define PWM31	0x000000031
+#define PWM32	0x000000032
+#define PWM33	0x000000033
+#define PWM34	0x000000034
+
+#define PWM41	0x000000041
+#define PWM42	0x000000042
+#define PWM43	0x000000043
+#define PWM44	0x000000044
+
+#define PWM51	0x000000051
+#define PWM52	0x000000052
+#define PWM53	0x000000053
+#define PWM54	0x000000054
+
+#define PWM61	0x000000061
+#define PWM62	0x000000062
+#define PWM63	0x000000063
+#define PWM64	0x000000064
+
+#define PWM71	0x000000071
+#define PWM72	0x000000072
+#define PWM73	0x000000073
+#define PWM74	0x000000074
+
+void Pwm(int pwm, int rate);
+
+#endif//__PWM_H__
+
