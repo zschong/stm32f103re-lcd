@@ -8,11 +8,13 @@ typedef enum{
 	TextMode = 1,
 }TextModeType_t;
 
-#define BLACK	0x0000
-#define WHITE	0xFFFF
-#define RED		0xF800
-#define GREEN	0x07E0
-#define BLUE	0x001F
+#define GRB(r,g,b)	( ((0x1F&(r)) << 11) | ((0x3F&((g)*2)) << 5) | (0x1F&(b)) )
+#define GRAY(x)		GRB(x, x, x)
+#define BLACK		GRB(0, 0, 0)
+#define WHITE		GRB(0xff, 0xff, 0xff)
+#define RED			GRB(0xff, 0x00, 0x00)
+#define GREEN		GRB(0x00, 0xff, 0x00)
+#define BLUE		GRB(0x00, 0x00, 0xff)
 
 #define LCD_DB		GPIOA
 #define LCD_DB0		PA0
@@ -163,6 +165,9 @@ void LcdMemClear(void);
 /*------------------- text function -------------------------*/
 void LcdLayer(int layer);
 void LcdText(uint16_t x, uint16_t y, char *text, int len);
+void LcdTextColor(uint16_t x, uint16_t y, uint16_t color, char *text, int len);
+void LcdTextColorZoom(
+uint16_t x, uint16_t y, uint16_t color, uint8_t zoom, char *text, int len);
 void LcdTextForgeGroundColor(uint16_t color);
 void LcdTextBackGroundColor(uint16_t color);
 void LcdTextAlignEnable(int enable);
@@ -172,39 +177,19 @@ void LcdTextZoom(int size);
 void LcdTextZoomHorizontal(int size);
 void LcdTextZoomVertical(int size);
 void LcdTextCursor(uint16_t x, uint16_t y);
-void LcdMemCursor(uint16_t x, uint16_t y);
+void LcdWindowCursor(uint16_t x, uint16_t y);
 void LcdWindowActive(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb);
 void LcdWindowClear(void);
-void LcdLayerSet(uint8_t layer);
-void LcdDisplayModeSet(uint8_t mode);
-void LcdColor4K(void);
+void LcdDisplayMode(uint8_t mode);
+void LcdColor256(void);
 void LcdColor65K(void);
-void LcdFontZoomSet(uint8_t size);
-void LcdFontBoldfacedSet(uint8_t bold);
-void LcdFontTransparency(uint8_t cmd);
-void LcdFontRotateZero(void);
-void LcdFontRotateNinety(void);
-
-void LcdCursorSet(uint16_t x, uint16_t y);
-void LcdSegNormalScan(void);
-void LcdSegReverseScan(void);
-void LcdConNormalScan(void);
-void LcdComReverseScan(void);
-void LcdScrollOffsetSet(uint16_t x, uint16_t y);
-void LcdScrollLayerSet(uint8_t layer);
-void LcdScrollLayer1Display(void);
-void LcdScrollLayer2Display(void);
-void LcdScrollOverLayerDisplay(void);
-void LcdScrollTransparentDisplay(void);
-void LcdScrollBoolOrDisplay(void);
-void LcdScrollBoolAndDisplay(void);
-void LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
-void LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
+void 
+LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
+void 
+LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
 void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
 void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
-void LcdDrawLine(uint16_t xl, uint16_t xr, uint16_t yt, uint16_t yb);
 void LcdTouchInit(void);
-uint8_t LcdTouchDataRead(uint16_t* x, uint16_t* y);
-void LcdFillColor(uint16_t x, uint16_t y, uint16_t size, uint16_t color);
+uint8_t LcdTouch(uint16_t* x, uint16_t* y);
 
 #endif//__LCD_H__

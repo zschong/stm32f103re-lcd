@@ -6,6 +6,7 @@
 #include "SHT3X.h"
 #include "delay.h"
 #include "debug.h"
+#include "keyboard.h"
 
 
 void SystickInit(void)
@@ -68,33 +69,46 @@ void LcdTest(void)
 	if( i++ == 0 )
 	{
 		LcdLayer(1);
-		LcdDrawRetangleFill(0,   0, 319,  79, RED);
-		LcdDrawRetangleFill(0,  80, 319, 159, GREEN);
-		LcdDrawRetangleFill(0, 160, 319, 239, BLUE);
-		LcdTextZoom(4);
-		LcdTextForgeGroundColor(GREEN);
-		LcdText(100, 00+4, "Red", 3);
-		LcdTextForgeGroundColor(BLUE);
-		LcdText(100, 80+4, "Green", 5);
-		LcdTextForgeGroundColor(RED);
-		LcdText(100, 160+4, "Blue", 4);
+		LcdDrawRetangleFill(0, 0*80, 319, 0*80+79, GRB(0xFF, 0x00, 0x00));
+		LcdDrawRetangleFill(0, 1*80, 319, 1*80+79, GRB(0x00, 0xFF, 0x00));
+		LcdDrawRetangleFill(0, 2*80, 319, 2*80+79, GRB(0x00, 0x00, 0xFF));
+		LcdTextColorZoom(100, 0*80+4, GRB(0x00, 0xFF, 0x00), 4,   "Red", 3);
+		LcdTextColorZoom(100, 1*80+4, GRB(0x00, 0x00, 0xFF), 4, "Green", 5);
+		LcdTextColorZoom(100, 2*80+2, GRB(0xFF, 0x00, 0x00), 4,  "Blue", 4);
 	}
 	static uint32_t timer = 0;
 	if( MTimeout(&timer, 10) )
 	{
 		static int count = 0;
-		char buf[10] = {0};
-		LcdDrawRetangleFill(250, 0, 319, 20, WHITE);
+		char buf[32] = {0};
+		LcdDrawRetangleFill(250, 4, 319, 20, WHITE);
 		sprintf(buf, "%.2f", count++/100.0);
-		buf[sizeof(buf)-1] = 0;
-		LcdTextZoom(1);
-		LcdTextForgeGroundColor(0);
-		LcdText(250, 4, buf, strlen(buf));
+		LcdTextColorZoom(250, 4, BLACK, 1, buf, strlen(buf));
+	}
+	uint16_t x = 0;
+	uint16_t y = 0;
+	if( LcdTouch(&x, &y) )
+	{
+		char buf[32] = {0};
+		sprintf(buf, "(%d, %d)", x, y);
+		LcdDrawRetangleFill(0, 4, 80, 20, WHITE);
+		LcdTextColorZoom(0, 4, BLACK, 1, buf, strlen(buf));
 	}
 }
 void SH3xTest(void)
 {
 	SHT3xGetTemperature();
+}
+void KeyboardTest(void)
+{
+	if( 0 == KeyChange() )
+	{
+		return;
+	}
+	Key1() ? LcdDrawCircleFill(0*80+35, 230, 10, GREEN) : LcdDrawCircleFill(0*80+35, 230, 10, GRAY(83));
+	Key2() ? LcdDrawCircleFill(1*80+35, 230, 10, GREEN) : LcdDrawCircleFill(1*80+35, 230, 10, GRAY(83));
+	Key3() ? LcdDrawCircleFill(2*80+35, 230, 10, GREEN) : LcdDrawCircleFill(2*80+35, 230, 10, GRAY(83));
+	Key4() ? LcdDrawCircleFill(3*80+35, 230, 10, GREEN) : LcdDrawCircleFill(3*80+35, 230, 10, GRAY(83));
 }
 /*------------end of test -----------*/
 
@@ -107,8 +121,8 @@ int main(void)
 	RtcInit();
 	LedInit();
 	LcdInit();
-	PwmInit();
 	SHT3xInit();
+	KeyboardInit();
 
 	while(1)
 	{
@@ -125,6 +139,7 @@ int main(void)
 			}
 		}
 		LcdTest();
+		KeyboardTest();
 //		SH3xTest();
 	}
 }

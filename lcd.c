@@ -9,7 +9,7 @@ void LcdInit(void)
 	LcdReset();
 
 	//PLL
-	LcdCmdWrite(0x88, 0x1f);
+	LcdCmdWrite(0x88, 0x1F);
 	LcdCmdWrite(0x89, 0x04);
 	USleep(100);
 
@@ -18,14 +18,11 @@ void LcdInit(void)
 	LcdCmdWrite(0x01, 0x80);
 
 	//System set
-	LcdCmdWrite(0x10, 0x08);//system config parallel data output 65K
-	USleep(100);
-
-	LcdCmdWrite(0x21, 0x10);//lay set, scan dot, enxternal cgrom, bigs
+	LcdCmdWrite(0x10, 0x00);//system config parallel data output 65K
 	USleep(100);
 
 	LcdCmdWrite(0x04, 0x01);
-	LcdCmdWrite(0x11, 0x00);//data bus of parallel panel 000=RGB
+	//LcdCmdWrite(0x11, 0x00);//data bus of parallel panel 000=RGB
 
 	//horizontal setting
 	LcdCmdWrite(0x14, 0x27);//horizontal display width(pixel)=(HDWR+1)*8
@@ -45,6 +42,7 @@ void LcdInit(void)
 	LcdColor65K();
 	LcdWindowClear();
 	LcdWindowActive(0, 0, 319, 239);
+	LcdTouchInit();
 }
 void LcdReset(void)
 {
@@ -71,22 +69,23 @@ void LcdGpioInit(void)
 	GpioInit(LCD_WR, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
 	GpioInit(LCD_RD, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
 
-	//BackLight=BL, Reset=RST, Ready=RDY, Interrupt=INT
-	//GpioInit(LCD_BL, GPIO_Mode_AF_PP, GPIO_Speed_50MHz);
-	GpioInit(LCD_BL, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
+	//Reset=RST, Ready=RDY, Interrupt=INT
 	GpioInit(LCD_RST, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
 	GpioInit(LCD_RDY, GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz);
 	GpioInit(LCD_INT, GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz);
 
-	//
-	//LcdBackLight(100);
-	GpioOn(LCD_BL);
+	//Backlight=BL
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+	GPIO_PinRemapConfig(GPIO_FullRemap_TIM3, ENABLE);
+	GpioInit(LCD_BL, GPIO_Mode_AF_PP, GPIO_Speed_50MHz);
+	LcdBackLight(50);
 }
 
 void LcdBackLight(int level)
 {
-	Pwm(PWM34, level);
+	Pwm(PWM34, level%101);
 }
+/*-------------------binary access----------------------*/
 uint8_t LcdStatus(void)
 {
 	uint8_t data = 0;
@@ -137,11 +136,8 @@ void LcdCheckBusy(void)
 }
 void LcdMemClear(void)
 {
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x8E);
-	tmp |= 0x80;
-	LcdCmdWrite(0x8E, tmp);
+	uint8_t tmp = LcdCmdRead(0x8E);
+	LcdCmdWrite(0x8E, tmp | 0x80);
 	LcdCheckBusy();
 }
 /*------------------- text function -------------------------*/
@@ -151,18 +147,54 @@ void LcdLayer(int layer)
 
 	switch(layer)
 	{
-		case 1:
-			LcdCmdWrite(0x20, tmp & 0x7F);
-			break;
-		case 2:
-			LcdCmdWrite(0x20, tmp | 0x80);
-			break;
+	case 1:
+		LcdCmdWrite(0x20, tmp & 0x7F);
+		break;
+	case 2:
+		LcdCmdWrite(0x20, tmp | 0x80);
+		break;
 	}
 }
 void LcdText(uint16_t x, uint16_t y, char *text, int len)
 {
 	LcdWindowActive(0, 0, 319, 239);
-	LcdDisplayModeSet(TextMode);
+	LcdDisplayMode(TextMode);
+	LcdTextBackGroundEnable(0);
+	LcdTextCursor(x, y);
+	LcdRegWrite(0x02);
+	LcdMemWriteStart();
+	for(int i = 0; text && i < len; i++)
+	{
+		LcdMemWrite(text[i]);
+		USleep(100);
+	}
+	LcdMemWriteEnd();
+	LcdCheckBusy();
+}
+void LcdTextColor(uint16_t x, uint16_t y, uint16_t color, char *text, int len)
+{
+	LcdWindowActive(0, 0, 319, 239);
+	LcdDisplayMode(TextMode);
+	LcdTextBackGroundEnable(0);
+	LcdTextForgeGroundColor(color);
+	LcdTextCursor(x, y);
+	LcdRegWrite(0x02);
+	LcdMemWriteStart();
+	for(int i = 0; text && i < len; i++)
+	{
+		LcdMemWrite(text[i]);
+		USleep(100);
+	}
+	LcdMemWriteEnd();
+	LcdCheckBusy();
+}
+void LcdTextColorZoom(
+uint16_t x, uint16_t y, uint16_t color, uint8_t zoom, char *text, int len)
+{
+	LcdTextZoom(zoom);
+	LcdTextForgeGroundColor(color);
+	LcdWindowActive(0, 0, 319, 239);
+	LcdDisplayMode(TextMode);
 	LcdTextBackGroundEnable(0);
 	LcdTextCursor(x, y);
 	LcdRegWrite(0x02);
@@ -216,12 +248,12 @@ void LcdTextRotate(int degree)
 	uint8_t tmp = LcdCmdRead(0x23);
 	switch(degree)
 	{
-		case 0:
-			LcdCmdWrite(0x22, tmp & ~(1<<4));
-			break;
-		case 90:
-			LcdCmdWrite(0x22, tmp | (1<<4));
-			break;
+	case 0:
+		LcdCmdWrite(0x22, tmp & ~(1<<4));
+		break;
+	case 90:
+		LcdCmdWrite(0x22, tmp | (1<<4));
+		break;
 	}
 }
 void LcdTextZoom(int size)
@@ -234,18 +266,18 @@ void LcdTextZoomHorizontal(int size)
 	uint8_t tmp = LcdCmdRead(0x22) & ~(3<<2);
 	switch(size)
 	{
-		case 1:
-			LcdCmdWrite(0x22, tmp | (0<<2));
-			break;
-		case 2:
-			LcdCmdWrite(0x22, tmp | (1<<2));
-			break;
-		case 3:
-			LcdCmdWrite(0x22, tmp | (2<<2));
-			break;
-		case 4:
-			LcdCmdWrite(0x22, tmp | (3<<2));
-			break;
+	case 1:
+		LcdCmdWrite(0x22, tmp | (0<<2));
+		break;
+	case 2:
+		LcdCmdWrite(0x22, tmp | (1<<2));
+		break;
+	case 3:
+		LcdCmdWrite(0x22, tmp | (2<<2));
+		break;
+	case 4:
+		LcdCmdWrite(0x22, tmp | (3<<2));
+		break;
 	}
 }
 void LcdTextZoomVertical(int size)
@@ -253,18 +285,18 @@ void LcdTextZoomVertical(int size)
 	uint8_t tmp = LcdCmdRead(0x22) & ~(3<<0);
 	switch(size)
 	{
-		case 1:
-			LcdCmdWrite(0x22, tmp | (0<<0));
-			break;
-		case 2:
-			LcdCmdWrite(0x22, tmp | (1<<0));
-			break;
-		case 3:
-			LcdCmdWrite(0x22, tmp | (2<<0));
-			break;
-		case 4:
-			LcdCmdWrite(0x22, tmp | (3<<0));
-			break;
+	case 1:
+		LcdCmdWrite(0x22, tmp | (0<<0));
+		break;
+	case 2:
+		LcdCmdWrite(0x22, tmp | (1<<0));
+		break;
+	case 3:
+		LcdCmdWrite(0x22, tmp | (2<<0));
+		break;
+	case 4:
+		LcdCmdWrite(0x22, tmp | (3<<0));
+		break;
 	}
 }
 void LcdTextCursor(uint16_t x, uint16_t y)
@@ -311,7 +343,8 @@ void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
 	LcdCmdWrite(0x9C, y>>8);
 	LcdCmdWrite(0x9D, radius);
 	LcdTextForgeGroundColor(color);
-	LcdCmdWrite(0x90, (1<<7)|(1<<6)|(0<<0));
+	LcdCmdWrite(0x90, (0<<7)|(1<<6));
+	LcdCmdWrite(0xA0, (1<<7)|(1<<0)|(0<<5));
 	LcdCheckBusy();
 }
 void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
@@ -322,10 +355,12 @@ void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
 	LcdCmdWrite(0x9C, y>>8);
 	LcdCmdWrite(0x9D, radius);
 	LcdTextForgeGroundColor(color);
-	LcdCmdWrite(0x90, (1<<7)|(1<<6)|(1<<5)|(0<<0));
+	LcdCmdWrite(0x90, (0<<7)|(1<<6)|(1<<5));
+	LcdCmdWrite(0xA0, (1<<7)|(1<<6)|(0<<5));
 	LcdCheckBusy();
 }
-void LcdMemCursor(uint16_t x, uint16_t y)
+/*-----------------window function-----------------------*/
+void LcdWindowCursor(uint16_t x, uint16_t y)
 {
 	LcdCmdWrite(0x46, x);
 	LcdCmdWrite(0x47, x>>8);
@@ -345,285 +380,52 @@ void LcdWindowActive(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb)
 }
 void LcdWindowClear(void)
 {
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x8E);
-	tmp |= 0xc0;
-	LcdCmdWrite(0x8E, tmp);
-	LcdCheckBusy();
+	LcdMemClear();
 }
-void LcdLayerSet(uint8_t layer)
+/*------------------------misc function--------------------*/
+void LcdDisplayMode(uint8_t mode)
 {
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x41);
-	if(layer)
-	{
-		tmp |= 0x01;
-	}
-	else
-	{
-		tmp &= 0xfe;
-	}
-	LcdCmdWrite(0x41, tmp);
-}
-void LcdDisplayModeSet(uint8_t mode)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x40);
 	if( mode )
 	{
-		tmp |= 0x80;
+		LcdCmdWrite(0x40, LcdCmdRead(0x40) | (1<<7));
 	}
 	else
 	{
-		tmp &= 0x7f;
+		LcdCmdWrite(0x40, LcdCmdRead(0x40) & ~(1<<7));
 	}
-	LcdCmdWrite(0x40, tmp);
 }
-void LcdColor4K(void)
+void LcdColor256(void)
 {
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x10) & 0xf3;
-	tmp |= 0x04;
-	LcdCmdWrite(0x10, tmp);
-	tmp = LcdCmdRead(0x20);
-	tmp |= 0x80;
-	LcdCmdWrite(0x20, tmp);
+	LcdCmdWrite(0x20, LcdCmdRead(0x10) & ~(3<<2));
 }
 void LcdColor65K(void)
 {
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x10) & 0xf3;
-	tmp |= 0x08;
-	LcdCmdWrite(0x10, tmp);
-	tmp = LcdCmdRead(0x20);
+	LcdCmdWrite(0x10, LcdCmdRead(0x10) | (3<<2));
 }
-void LcdFontZoomSet(uint8_t size)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x22) & 0xf0;
-	switch( size )
-	{
-		case 1:
-			tmp |= 0x00;
-			break;
-		case 2:
-			tmp |= 0x05;
-			break;
-		case 3:
-			tmp |= 0x0A;
-			break;
-		case 4:
-			tmp |= 0x0F;
-			break;
-	}
-	LcdCmdWrite(0x22, tmp);
-}
-void LcdFontBoldfacedSet(uint8_t bold)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x22) & 0xdf;
-
-	if(bold == 0x00)
-	{
-		tmp |= 0x00;
-	}
-	else if(bold == 0x01)
-	{
-		tmp |= 0x20;
-	}
-	LcdCmdWrite(0x22, tmp);
-}
-void LcdFontTransparency(uint8_t cmd)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x22) & 0xbf;
-
-	if(cmd == 0x00)
-	{
-		tmp |= 0x00;
-	}
-	else if(cmd == 0x01)
-	{
-		tmp |= 0x10;
-	}
-	LcdCmdWrite(0x22, tmp);
-}
-void LcdFontRotateZero(void)
-{
-	uint8_t tmp = 0;
-	tmp = LcdCmdRead(0x22) & 0xef;
-	LcdCmdWrite(0x22, tmp);
-}
-void LcdFontRotateNinety(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x22) & 0xef;
-	tmp |= 0x10;
-	LcdCmdWrite(0x22, tmp);
-}
-
-void LcdCursorSet(uint16_t x, uint16_t y)
-{
-	LcdCmdWrite(0x46, x);
-	LcdCmdWrite(0x47, x >> 8);
-	LcdCmdWrite(0x48, y);
-	LcdCmdWrite(0x49, y >> 8);
-}
-void LcdSegNormalScan(void)
-{
-	uint8_t tmp = 0;
-	tmp = LcdCmdRead(0x20) & 0xf7;
-	LcdCmdWrite(0x20, tmp);
-}
-void LcdSegReverseScan(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x20) & 0xf7;
-	tmp |= 0x08;
-	LcdCmdWrite(0x20, tmp);
-}
-void LcdConNormalScan(void)
-{
-	uint8_t tmp = 0;
-	tmp = LcdCmdRead(0x20) & 0xf7;
-	LcdCmdWrite(0x20, tmp);
-}
-void LcdComReverseScan(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x20) & 0xf7;
-	tmp |= 0x08;
-	LcdCmdWrite(0x20, tmp);
-}
-void LcdScrollOffsetSet(uint16_t x, uint16_t y)
-{
-	uint8_t tmp = 0;
-
-	tmp = x;
-	LcdCmdWrite(0x24, tmp);
-	tmp = x >> 8;
-	LcdCmdWrite(0x25, tmp);
-	tmp = y;
-	LcdCmdWrite(0x26, tmp);
-	tmp = y >> 8;
-	LcdCmdWrite(0x27, tmp);
-}
-void LcdScrollLayerSet(uint8_t layer)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0x3f;
-	if(layer == 0x00)
-		tmp |= 0x40;
-	else if(layer == 0x01)
-		tmp |= 0x80;
-	LcdCmdWrite(0x52, tmp);
-}
-void LcdScrollLayer1Display(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0xf8;
-	LcdCmdWrite(0x52, tmp);
-}
-void LcdScrollLayer2Display(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0xf8;
-	tmp |= 0x01;
-	LcdCmdWrite(0x52, tmp);
-}
-void LcdScrollOverLayerDisplay(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0xf8;
-	tmp |= 0x02;
-	LcdCmdWrite(0x52, tmp);
-}
-void LcdScrollTransparentDisplay(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0xf8;
-	tmp |= 0x03;
-	LcdCmdWrite(0x52, tmp);
-}
-void LcdScrollBoolOrDisplay(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0xf8;
-	tmp |= 0x04;
-	LcdCmdWrite(0x52, tmp);
-}
-void LcdScrollBoolAndDisplay(void)
-{
-	uint8_t tmp = 0;
-
-	tmp = LcdCmdRead(0x52) & 0xf8;
-	tmp |= 0x05;
-	LcdCmdWrite(0x52, tmp);
-}
+/*------------------------touch screen function------------------*/
 void LcdTouchInit(void)
 {
-	LcdCmdWrite(0x70, 0xb4);//adc clk div4, adc 4096clk, enable touch
-	LcdCmdWrite(0x71, 0x85);//touch 4line, Vref internal, external int
-	LcdCmdWrite(0x8F, 0x40);//touch int enable
+	LcdCmdWrite(0x70, (1<<7)|(3<<4)|(1<<3)|(1<<2));//0xB4:Enable, clk=4096, 16clk
+	LcdCmdWrite(0x71, (0<<6)|(1<<1));
 }
-uint8_t LcdTouchDataRead(uint16_t* x, uint16_t* y)
+uint8_t LcdTouch(uint16_t *xp, uint16_t *yp)
 {
-	uint8_t xh = 0;
-	uint8_t val = 0;
-	uint8_t yh = 0;
-	uint8_t xl = 0;
-	uint8_t yl = 0;
-	uint16_t tmp = 0;
-
-	if((LcdCmdRead(0x8F) & 0x04) == 0)
+	if( (LcdCmdRead(0xF1) & (1<<2)) == 0 )
 	{
 		return 0;
 	}
-	xh = LcdCmdRead(0x72);
-	yh = LcdCmdRead(0x73);
-	val = LcdCmdRead(0x74);
-	xl = val & 0x03;
-	yl = val & 0x0c;
-	yl >>= 2;
-	tmp = xh;
-	tmp <<= 8;
-	*x = tmp | xl;
-	tmp = 0;
-	tmp = yh;
-	tmp <<= 8;
-	*y = tmp | yl;
-	LcdCmdWrite(0x8F, 0x44);
+	uint16_t x = LcdCmdRead(0x72);
+	uint16_t y = LcdCmdRead(0x73);
+	uint16_t z = LcdCmdRead(0x74);
+	LcdCmdWrite(0xF1, (1<<2));
+	x <<= 2;
+	x |= 3 & (z >> 0);
+
+	y <<= 2;
+	y |= 3 & (z >> 2);
+
+	*xp = x;
+	*yp = y;
 
 	return 1;
-}
-
-void LcdFillColor(uint16_t x, uint16_t y, uint16_t size, uint16_t color)
-{
-	LcdDisplayModeSet(DrawMode);
-	LcdCursorSet(x, y);
-	LcdRegWrite(0x02);
-	LcdMemWriteStart();
-	for(int i = 0; i < size; i++)
-	{
-		LcdMemWrite(color);
-		LcdMemWrite(color >> 8);
-	}
-	LcdMemWriteEnd();
 }
