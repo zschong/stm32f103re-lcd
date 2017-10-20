@@ -1,7 +1,10 @@
+#include <math.h>
 #include <string.h>
+#include "led.h"
 #include "pwm.h"
 #include "rtc.h"
 #include "lcd.h"
+#include "shape.h"
 #include "usart.h"
 #include "SHT3X.h"
 #include "delay.h"
@@ -20,17 +23,6 @@ void UsartInit(void)
 void BuzzerInit(void)
 {
 	GpioInit(PA15, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
-}
-void LedInit(void)
-{
-	GpioInit(PC11, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
-}
-void PwmInit(void)
-{
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-	GPIO_PinRemapConfig(GPIO_FullRemap_TIM3, ENABLE);
-	GpioInit(PC9, GPIO_Mode_AF_PP, GPIO_Speed_50MHz);
-	Pwm(PWM34, 50);
 }
 void RtcInit(void)
 {
@@ -85,14 +77,18 @@ void LcdTest(void)
 		sprintf(buf, "%.2f", count++/100.0);
 		LcdTextColorZoom(250, 4, BLACK, 1, buf, strlen(buf));
 	}
-	uint16_t x = 0;
-	uint16_t y = 0;
-	if( LcdTouch(&x, &y) )
+}
+void TouchScreenTest(void)
+{
+	uint16_t x = 0, y = 0;
+
+	if( TouchPoint(&x, &y) )
 	{
 		char buf[32] = {0};
 		sprintf(buf, "(%d, %d)", x, y);
 		LcdDrawRetangleFill(0, 4, 80, 20, WHITE);
 		LcdTextColorZoom(0, 4, BLACK, 1, buf, strlen(buf));
+		LcdDrawCircleFill(x, y, 1, BLACK);
 	}
 }
 void SH3xTest(void)
@@ -105,17 +101,28 @@ void KeyboardTest(void)
 	{
 		return;
 	}
-	Key1() ? LcdDrawCircleFill(0*80+35, 230, 10, GREEN) : LcdDrawCircleFill(0*80+35, 230, 10, GRAY(83));
-	Key2() ? LcdDrawCircleFill(1*80+35, 230, 10, GREEN) : LcdDrawCircleFill(1*80+35, 230, 10, GRAY(83));
-	Key3() ? LcdDrawCircleFill(2*80+35, 230, 10, GREEN) : LcdDrawCircleFill(2*80+35, 230, 10, GRAY(83));
-	Key4() ? LcdDrawCircleFill(3*80+35, 230, 10, GREEN) : LcdDrawCircleFill(3*80+35, 230, 10, GRAY(83));
+	Key1() 
+		? LcdDrawCircleFill(0*80+35, 230, 10, GREEN) 
+		: LcdDrawCircleFill(0*80+35, 230, 10, GRAY(83));
+	Key2() 
+		? LcdDrawCircleFill(1*80+35, 230, 10, GREEN) 
+		: LcdDrawCircleFill(1*80+35, 230, 10, GRAY(83));
+	Key3() 
+		? LcdDrawCircleFill(2*80+35, 230, 10, GREEN) 
+		: LcdDrawCircleFill(2*80+35, 230, 10, GRAY(83));
+	Key4() 
+		? LcdDrawCircleFill(3*80+35, 230, 10, GREEN) 
+		: LcdDrawCircleFill(3*80+35, 230, 10, GRAY(83));
+
+	Key1() ? LcdDrawRetangleFill(0, 0, 320, 240, RED) : LcdCheckBusy();
+	Key2() ? LcdDrawRetangleFill(0, 0, 320, 240, GREEN) : LcdCheckBusy();
+	Key3() ? LcdDrawRetangleFill(0, 0, 320, 240, BLUE) : LcdCheckBusy();
+	Key4() ? LcdDrawRetangleFill(0, 0, 320, 240, GRAY(25)) : LcdCheckBusy();
 }
 /*------------end of test -----------*/
 
 int main(void)
 {
-	uint32_t timeout = 0;
-
 	SystickInit();
 	UsartInit();
 	RtcInit();
@@ -123,23 +130,20 @@ int main(void)
 	LcdInit();
 	SHT3xInit();
 	KeyboardInit();
+	TouchScreenInit();
 
 	while(1)
 	{
+		static uint32_t timeout = 0;
+
 		if( MTimeout(&timeout, 680) )
 		{	
-//			RtcTest();
-			if( GpioOutputValue(PC11) == 0 )
-			{
-				GpioOn(PC11);
-			}
-			else
-			{
-				GpioOff(PC11);
-			}
+			LedGetValue(0) 
+			? LedSetValue(0, 0) 
+			: LedSetValue(0, 1);
 		}
 		LcdTest();
 		KeyboardTest();
-//		SH3xTest();
+		TouchScreenTest();
 	}
 }

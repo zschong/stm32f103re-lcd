@@ -10,6 +10,14 @@ uint32_t GetTimeTick(void)
 {
 	return timetick;
 }
+uint32_t GetUsecond(void)
+{
+	return timetick;
+}
+uint32_t GetMsecond(void)
+{
+	return timetick/1000;
+}
 uint32_t GetTimeSecond(void)
 {
 	return timetick/1000/1000;

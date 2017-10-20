@@ -5,6 +5,8 @@
 
 uint32_t SystickConfig(void);
 uint32_t GetTimeTick(void);
+uint32_t GetUsecond(void);
+uint32_t GetMsecond(void);
 uint32_t GetTimeSecond(void);
 uint32_t UTimeout(uint32_t *last, uint32_t us);
 uint32_t MTimeout(uint32_t *last, uint32_t ms);

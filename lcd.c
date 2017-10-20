@@ -42,7 +42,6 @@ void LcdInit(void)
 	LcdColor65K();
 	LcdWindowClear();
 	LcdWindowActive(0, 0, 319, 239);
-	LcdTouchInit();
 }
 void LcdReset(void)
 {
@@ -403,16 +402,16 @@ void LcdColor65K(void)
 	LcdCmdWrite(0x10, LcdCmdRead(0x10) | (3<<2));
 }
 /*------------------------touch screen function------------------*/
-void LcdTouchInit(void)
+void TouchScreenInit(void)
 {
 	LcdCmdWrite(0x70, (1<<7)|(3<<4)|(1<<3)|(1<<2));//0xB4:Enable, clk=4096, 16clk
-	LcdCmdWrite(0x71, (0<<6)|(1<<1));
+	LcdCmdWrite(0x71, (0<<6)|(1<<2)|(1<<1));
 }
-uint8_t LcdTouch(uint16_t *xp, uint16_t *yp)
+bool TouchScreenXY(uint16_t *xp, uint16_t *yp)
 {
 	if( (LcdCmdRead(0xF1) & (1<<2)) == 0 )
 	{
-		return 0;
+		return false;
 	}
 	uint16_t x = LcdCmdRead(0x72);
 	uint16_t y = LcdCmdRead(0x73);
@@ -424,8 +423,45 @@ uint8_t LcdTouch(uint16_t *xp, uint16_t *yp)
 	y <<= 2;
 	y |= 3 & (z >> 2);
 
-	*xp = x;
-	*yp = y;
+	*xp = LCD_X - ((x * LCD_X / 999)) % LCD_X;
+	*yp = LCD_Y - ((y * LCD_Y / 999)) % LCD_Y;
 
-	return 1;
+	return true;
+}
+bool TouchPoint(uint16_t *xx, uint16_t *yy)
+{
+	uint16_t x = 0;
+	uint16_t y = 0;
+	static struct{
+		uint16_t x;
+		uint16_t y;
+		uint32_t time;
+	}p = {0, 0, 0};
+
+	if( TouchScreenXY(&x, &y) )
+	{
+		int t = GetUsecond() - p.time;
+
+		if( t > 30*1000 )
+		{
+			p.x = x;
+			p.y = y;
+			p.time = GetUsecond();
+		}
+		int a = x - p.x;
+		int b = y - p.y;
+		int l = a*a + b*b;
+		if( l > 3 && t < l*1000 )
+		{
+			p.x = x;
+			p.y = y;
+			p.time = GetUsecond();
+			return false;
+		}
+		*xx = p.x = x;
+		*yy = p.y = y;
+		p.time = GetUsecond();
+		return true;
+	}
+	return false;
 }

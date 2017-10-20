@@ -8,6 +8,9 @@ typedef enum{
 	TextMode = 1,
 }TextModeType_t;
 
+#define LCD_X		320
+#define LCD_Y		240
+
 #define GRB(r,g,b)	( ((0x1F&(r)) << 11) | ((0x3F&((g)*2)) << 5) | (0x1F&(b)) )
 #define GRAY(x)		GRB(x, x, x)
 #define BLACK		GRB(0, 0, 0)
@@ -189,7 +192,8 @@ void
 LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
 void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
 void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
-void LcdTouchInit(void);
-uint8_t LcdTouch(uint16_t* x, uint16_t* y);
+void TouchScreenInit(void);
+bool TouchScreenXY(uint16_t* x, uint16_t* y);
+bool TouchPoint(uint16_t *xx, uint16_t *yy);
 
 #endif//__LCD_H__
