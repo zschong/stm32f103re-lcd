@@ -99,25 +99,33 @@ void KeyboardTest(void)
 {
 	if( 0 == KeyChange() )
 	{
+		if( Key1() )
+		{
+			char buf[32] = {0};
+			sprintf(buf, "%d", Key1Ontime());
+			LcdDrawRetangleFill(0, 80, 80, 80+20, GRAY(28));
+			LcdTextColorZoom(10, 80+4, BLACK, 1, buf, strlen(buf));
+		}
 		return;
 	}
 	Key1() 
 		? LcdDrawCircleFill(0*80+35, 230, 10, GREEN) 
-		: LcdDrawCircleFill(0*80+35, 230, 10, GRAY(83));
+		: LcdDrawCircleFill(0*80+35, 230, 10, GRAY(10));
 	Key2() 
 		? LcdDrawCircleFill(1*80+35, 230, 10, GREEN) 
-		: LcdDrawCircleFill(1*80+35, 230, 10, GRAY(83));
+		: LcdDrawCircleFill(1*80+35, 230, 10, GRAY(10));
 	Key3() 
 		? LcdDrawCircleFill(2*80+35, 230, 10, GREEN) 
-		: LcdDrawCircleFill(2*80+35, 230, 10, GRAY(83));
+		: LcdDrawCircleFill(2*80+35, 230, 10, GRAY(10));
 	Key4() 
 		? LcdDrawCircleFill(3*80+35, 230, 10, GREEN) 
-		: LcdDrawCircleFill(3*80+35, 230, 10, GRAY(83));
+		: LcdDrawCircleFill(3*80+35, 230, 10, GRAY(10));
 
 	Key1() ? LcdDrawRetangleFill(0, 0, 320, 240, RED) : LcdCheckBusy();
 	Key2() ? LcdDrawRetangleFill(0, 0, 320, 240, GREEN) : LcdCheckBusy();
 	Key3() ? LcdDrawRetangleFill(0, 0, 320, 240, BLUE) : LcdCheckBusy();
 	Key4() ? LcdDrawRetangleFill(0, 0, 320, 240, GRAY(25)) : LcdCheckBusy();
+
 }
 /*------------end of test -----------*/
 

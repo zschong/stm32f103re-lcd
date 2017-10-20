@@ -1,3 +1,4 @@
+#include "exti.h"
 #include "delay.h"
 #include "keyboard.h"
 
@@ -12,16 +13,18 @@ static uint32_t key4offtime = 0;
 
 void KeyboardInit(void)
 {
+	ExtiInit(KEY1, EXTI_Mode_Interrupt, EXTI_Trigger_Falling);
+	ExtiInit(KEY2, EXTI_Mode_Interrupt, EXTI_Trigger_Falling);
+	ExtiInit(KEY3, EXTI_Mode_Interrupt, EXTI_Trigger_Falling);
+	ExtiInit(KEY4, EXTI_Mode_Interrupt, EXTI_Trigger_Falling);
+
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
 	GpioInit(KEY1, GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz);
 	GpioInit(KEY2, GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz);
 	GpioInit(KEY3, GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz);
 	GpioInit(KEY4, GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz);
-	key1offtime = GetUsecond();
-	key2offtime = GetUsecond();
-	key3offtime = GetUsecond();
-	key4offtime = GetUsecond();
 }
 bool KeyChange(void)
 {
@@ -82,121 +85,133 @@ bool Key4Change(void)
 }
 uint32_t Key1Ontime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key2() )
+	if( 0 == key1ontime )
 	{
-		if( 0 == key2ontime )
-		{
-			key2offtime = 0;
-			key2ontime = now;
-		}
-		return now - key2ontime;
+		return key1ontime;
 	}
-	return (key2ontime=0);
+	return GetUsecond() - key1ontime;	
 }
 uint32_t Key2Ontime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key1() )
+	if( 0 == key2ontime )
 	{
-		if( 0 == key1ontime )
-		{
-			key1offtime = 0;
-			key1ontime = now;
-		}
-		return now - key1ontime;
+		return key2ontime;
 	}
-	return (key1ontime=0);
+	return GetUsecond() - key2ontime;	
 }
 uint32_t Key3Ontime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key3() )
+	if( 0 == key3ontime )
 	{
-		if( 0 == key3ontime )
-		{
-			key3offtime = 0;
-			key3ontime = now;
-		}
-		return now - key3ontime;
+		return key3ontime;
 	}
-	return (key3ontime=0);
+	return GetUsecond() - key3ontime;	
 }
 uint32_t Key4Ontime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key4() )
+	if( 0 == key4ontime )
 	{
-		if( 0 == key4ontime )
-		{
-			key4offtime = 0;
-			key4ontime = now;
-		}
-		return now - key4ontime;
+		return key4ontime;
 	}
-	return (key4ontime=0);
+	return GetUsecond() - key4ontime;	
 }
 uint32_t Key1Offtime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key1() )
-	{
-		return (key1offtime=0);
-	}
 	if( 0 == key1offtime )
 	{
-		key1ontime = 0;
-		key1offtime = now;
+		return key1offtime;
 	}
-	return (now - key1offtime);
+	return GetUsecond() - key1offtime;	
 }
 uint32_t Key2Offtime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key1() )
-	{
-		return (key2offtime=0);
-	}
 	if( 0 == key2offtime )
 	{
-		key2ontime = 0;
-		key2offtime = now;
+		return key2offtime;
 	}
-	return (now - key2offtime);
+	return GetUsecond() - key2offtime;	
 }
 uint32_t Key3Offtime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key1() )
-	{
-		return (key3offtime=0);
-	}
 	if( 0 == key3offtime )
 	{
-		key3ontime = 0;
-		key3offtime = now;
+		return key3offtime;
 	}
-	return (now - key3offtime);
+	return GetUsecond() - key3offtime;	
 }
 uint32_t Key4Offtime(void)
 {
-	uint32_t now = GetUsecond();
-
-	if( Key1() )
-	{
-		return (key4offtime=0);
-	}
 	if( 0 == key4offtime )
 	{
-		key4ontime = 0;
-		key4offtime = now;
+		return key4offtime;
 	}
-	return (now - key4offtime);
+	return GetUsecond() - key4offtime;	
+}
+void Key1Handler(void)
+{
+	if( EXTI_GetFlagStatus(Key1ExtLine) != RESET )
+	{
+		if( 0 == Key1() )
+		{
+			key1ontime = 0;
+			key1offtime = GetUsecond();
+		}
+		else
+		{
+			key1offtime = 0;
+			key1ontime = GetUsecond();
+		}
+		EXTI_ClearITPendingBit(Key1ExtLine);
+	}
+}
+void Key2Handler(void)
+{
+	if( EXTI_GetFlagStatus(Key2ExtLine) != RESET )
+	{
+		if( 0 == Key2() )
+		{
+			key2ontime = 0;
+			key2offtime = GetUsecond();
+		}
+		else
+		{
+			key2offtime = 0;
+			key2ontime = GetUsecond();
+		}
+		EXTI_ClearITPendingBit(Key2ExtLine);
+	}
+}
+void Key3Handler(void)
+{
+	if( EXTI_GetFlagStatus(Key3ExtLine) != RESET )
+	{
+		if( 0 == Key3() )
+		{
+			key3ontime = 0;
+			key3offtime = GetUsecond();
+		}
+		else
+		{
+			key3offtime = 0;
+			key3ontime = GetUsecond();
+		}
+		EXTI_ClearITPendingBit(Key3ExtLine);
+	}
+}
+void Key4Handler(void)
+{
+	if( EXTI_GetFlagStatus(Key4ExtLine) != RESET )
+	{
+		if( 0 == Key4() )
+		{
+			key4ontime = 0;
+			key4offtime = GetUsecond();
+		}
+		else
+		{
+			key4offtime = 0;
+			key4ontime = GetUsecond();
+		}
+		EXTI_ClearITPendingBit(Key4ExtLine);
+	}
 }

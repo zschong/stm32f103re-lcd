@@ -2,6 +2,15 @@
 #define __KEYBOARD_H__
 #include "gpio.h"
 
+#define Key1Handler	EXTI9_5_IRQHandler
+#define Key2Handler	EXTI4_IRQHandler
+#define Key3Handler	EXTI3_IRQHandler
+#define Key4Handler	EXTI2_IRQHandler
+#define Key1ExtLine	EXTI_Line5
+#define Key2ExtLine	EXTI_Line4
+#define Key3ExtLine	EXTI_Line3
+#define Key4ExtLine	EXTI_Line2
+
 #define KEY1		PB5
 #define KEY2		PB4
 #define KEY3		PB3
