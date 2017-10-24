@@ -187,13 +187,15 @@ void LcdDisplayMode(uint8_t mode);
 void LcdColor256(void);
 void LcdColor65K(void);
 void 
+LcdDrawLine(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
+void 
 LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
 void 
 LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
 void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
 void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
-void TouchScreenInit(void);
-bool TouchScreenXY(uint16_t* x, uint16_t* y);
-bool TouchPoint(uint16_t *xx, uint16_t *yy);
+void LcdTouchInit(void);
+bool LcdTouchXY(uint16_t* x, uint16_t* y);
+bool LcdTouch(uint16_t *x, uint16_t *y);
 
 #endif//__LCD_H__

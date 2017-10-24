@@ -4,12 +4,12 @@
 #include "pwm.h"
 #include "rtc.h"
 #include "lcd.h"
-#include "shape.h"
 #include "usart.h"
 #include "SHT3X.h"
 #include "delay.h"
 #include "debug.h"
 #include "keyboard.h"
+#include "window.h"
 
 
 void SystickInit(void)
@@ -78,17 +78,26 @@ void LcdTest(void)
 		LcdTextColorZoom(250, 4, BLACK, 1, buf, strlen(buf));
 	}
 }
-void TouchScreenTest(void)
+void LcdTouchTest(void)
 {
 	uint16_t x = 0, y = 0;
+	static uint32_t timer = 0;
+	static uint16_t ox = 0, oy = 0;
 
-	if( TouchPoint(&x, &y) )
+	if( LcdTouch(&x, &y) )
 	{
 		char buf[32] = {0};
 		sprintf(buf, "(%d, %d)", x, y);
 		LcdDrawRetangleFill(0, 4, 80, 20, WHITE);
 		LcdTextColorZoom(0, 4, BLACK, 1, buf, strlen(buf));
 		LcdDrawCircleFill(x, y, 1, BLACK);
+		if( ox != 0 && (ox != x || oy != y) && GetUsecond() - timer < 30000 )
+		{
+			LcdDrawLine(ox, oy, x, y, BLACK);
+		}
+		ox = x;
+		oy = y;
+		timer = GetUsecond();
 	}
 }
 void SH3xTest(void)
@@ -138,7 +147,9 @@ int main(void)
 	LcdInit();
 	SHT3xInit();
 	KeyboardInit();
-	TouchScreenInit();
+	LcdTouchInit();
+	WindowInit();
+	WindowActionScan();
 
 	while(1)
 	{
@@ -150,8 +161,8 @@ int main(void)
 			? LedSetValue(0, 0) 
 			: LedSetValue(0, 1);
 		}
-		LcdTest();
-		KeyboardTest();
-		TouchScreenTest();
+		//LcdTest();
+		//LcdTouchTest();
+		//KeyboardTest();
 	}
 }

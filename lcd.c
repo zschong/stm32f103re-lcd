@@ -306,6 +306,20 @@ void LcdTextCursor(uint16_t x, uint16_t y)
 	LcdCmdWrite(0x2D, y>>8);
 }
 /*-----------------------draw function----------------------------*/
+void LcdDrawLine(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c)
+{
+	LcdCmdWrite(0x91, x);
+	LcdCmdWrite(0x92, x>>8);
+	LcdCmdWrite(0x93, y);
+	LcdCmdWrite(0x94, y>>8);
+	LcdCmdWrite(0x95, xb);
+	LcdCmdWrite(0x96, xb>>8);
+	LcdCmdWrite(0x97, yb);
+	LcdCmdWrite(0x98, yb>>8);
+	LcdTextForgeGroundColor(c);
+	LcdCmdWrite(0x90, (1<<7)|(0<<4)|(0<<0));
+	LcdCheckBusy();
+}
 void LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c)
 {
 	LcdCmdWrite(0x91, x);
@@ -402,12 +416,12 @@ void LcdColor65K(void)
 	LcdCmdWrite(0x10, LcdCmdRead(0x10) | (3<<2));
 }
 /*------------------------touch screen function------------------*/
-void TouchScreenInit(void)
+void LcdTouchInit(void)
 {
 	LcdCmdWrite(0x70, (1<<7)|(3<<4)|(1<<3)|(1<<2));//0xB4:Enable, clk=4096, 16clk
 	LcdCmdWrite(0x71, (0<<6)|(1<<2)|(1<<1));
 }
-bool TouchScreenXY(uint16_t *xp, uint16_t *yp)
+bool LcdTouchXY(uint16_t *xp, uint16_t *yp)
 {
 	if( (LcdCmdRead(0xF1) & (1<<2)) == 0 )
 	{
@@ -428,7 +442,7 @@ bool TouchScreenXY(uint16_t *xp, uint16_t *yp)
 
 	return true;
 }
-bool TouchPoint(uint16_t *xx, uint16_t *yy)
+bool LcdTouch(uint16_t *xx, uint16_t *yy)
 {
 	uint16_t x = 0;
 	uint16_t y = 0;
@@ -438,7 +452,7 @@ bool TouchPoint(uint16_t *xx, uint16_t *yy)
 		uint32_t time;
 	}p = {0, 0, 0};
 
-	if( TouchScreenXY(&x, &y) )
+	if( LcdTouchXY(&x, &y) )
 	{
 		int t = GetUsecond() - p.time;
 
