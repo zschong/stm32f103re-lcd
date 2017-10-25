@@ -4,49 +4,29 @@ static uint32_t timetick = 0;
 
 uint32_t SystickConfig(void)
 {
-	return SysTick_Config(SystemCoreClock/1000/1000);
+	return SysTick_Config(SystemCoreClock/1000);
 }
-uint32_t GetTimeTick(void)
+uint32_t Msecond(void)
 {
 	return timetick;
 }
-uint32_t GetUsecond(void)
-{
-	return timetick;
-}
-uint32_t GetMsecond(void)
+uint32_t Second(void)
 {
 	return timetick/1000;
 }
-uint32_t GetTimeSecond(void)
+uint32_t MTimeout(uint32_t *last, uint32_t us)
 {
-	return timetick/1000/1000;
-}
-uint32_t UTimeout(uint32_t *last, uint32_t us)
-{
-	if( 0 == last )
+	if(timetick - *last > us )
 	{
-		return 0;
+		*last = timetick;
+		return 1;
 	}
-	if( timetick - *last < us )
-	{
-		return 0;
-	}
-	*last = timetick;
-	return 1;
+	return 0;
 }
-uint32_t MTimeout(uint32_t *last, uint32_t ms)
-{
-	return UTimeout(last, ms * 1000);
-}
-void USleep(uint32_t us)
+void msleep(uint32_t us)
 {
 	uint32_t last = timetick;
 	while(timetick - last < us);
-}
-void MSleep(uint32_t ms)
-{
-	USleep(ms * 1000);
 }
 void SysTick_Handler(void)
 {

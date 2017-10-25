@@ -9,7 +9,7 @@
 #include "delay.h"
 #include "debug.h"
 #include "keyboard.h"
-#include "window.h"
+#include "screen.h"
 
 
 void SystickInit(void)
@@ -91,13 +91,13 @@ void LcdTouchTest(void)
 		LcdDrawRetangleFill(0, 4, 80, 20, WHITE);
 		LcdTextColorZoom(0, 4, BLACK, 1, buf, strlen(buf));
 		LcdDrawCircleFill(x, y, 1, BLACK);
-		if( ox != 0 && (ox != x || oy != y) && GetUsecond() - timer < 30000 )
+		if( ox != 0 && (ox != x || oy != y) && Msecond() - timer < 30 )
 		{
 			LcdDrawLine(ox, oy, x, y, BLACK);
 		}
 		ox = x;
 		oy = y;
-		timer = GetUsecond();
+		timer = Msecond();
 	}
 }
 void SH3xTest(void)
@@ -148,8 +148,7 @@ int main(void)
 	SHT3xInit();
 	KeyboardInit();
 	LcdTouchInit();
-	WindowInit();
-	WindowActionScan();
+	Screen0Init();
 
 	while(1)
 	{
@@ -164,5 +163,7 @@ int main(void)
 		//LcdTest();
 		//LcdTouchTest();
 		//KeyboardTest();
+		Screen0Show();
+		Screen0Scan();
 	}
 }

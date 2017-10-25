@@ -2,35 +2,75 @@
 #define __WINDOW_H__
 #include "lcd.h"
 
-
 #define SCREEN_W	320
 #define SCREEN_H	240
-#define SCREEN_MAX	8
-#define WINDOW_MAX	16
-#define SCREEN(s)	(screenx[ (s) % SCREEN_MAX ])
-#define WINDOW(s,w)	(SCREEN(s)[ (w) % WINDOW_MAX ])
 
-typedef struct
+typedef enum
+{
+	NoAction  = 0,
+	TextZoom1 = 1,
+	TextZoom2 = 2,
+	TextZoom3 = 3,
+	TextZoom4 = 4,
+	FillColor = 5,
+	ImageDraw = 6,
+}WindowStatus;
+
+typedef struct Point
 {
 	uint16_t x;
 	uint16_t y;
 }Point;
 
-typedef struct Window
+typedef struct Window 
 {
-	Point top;
-	Point bot;
-	void(*touch)(struct Window*);
-	void(*action)(struct Window*);
+	uint16_t x;//window.x
+	uint16_t y;//window.y
+	uint16_t w;//window.width
+	uint16_t h;//window.height
+	uint16_t b;//window.background_color
+	uint16_t f;//window.foreground_color
+	uint8_t* p;//window.buffer
+	uint16_t l;//window.length
+	uint16_t s;//window.status
+	uint32_t t;//window.time
 }Window;
+typedef struct Screen
+{
+	uint32_t count;
+	Window *window;
+}Screen;
 
-void WindowInit(void);
-void WindowActionScan(void);
-void WindowTouchScan(void);
-bool WindowMatch(Point *p, Window *w);
-void WindowBind(int screen, int window, Window *w);
+#define WindowClear(window) \
+do{\
+	window.x = (0); \
+	window.y = (0); \
+	window.w = (0); \
+	window.h = (0); \
+	window.b = (0); \
+	window.f = (0); \
+	window.p = (0); \
+	window.l = (0); \
+	window.s = (0); \
+}while(0)
 
-extern int current_screen;
-extern struct Window screenx[SCREEN_MAX][WINDOW_MAX];
+#define WindowInit(window,f1,f2,f3,f4,f5,f6,f7,f8,f9) \
+do{\
+	window.x = (f1); \
+	window.y = (f2); \
+	window.w = (f3); \
+	window.h = (f4); \
+	window.b = (f5); \
+	window.f = (f6); \
+	window.p = (f7); \
+	window.l = (f8); \
+	window.s = (f9); \
+}while(0)
+
+Window* GetWindow(int i);
+Screen* GetScreen(void);
+void SetScreen(Screen *s);
+void WindowShow(Window *w);
+bool WindowPoint(Window *, Point *p);
 
 #endif//__WINDOW_H__

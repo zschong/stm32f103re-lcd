@@ -11,7 +11,7 @@ void LcdInit(void)
 	//PLL
 	LcdCmdWrite(0x88, 0x1F);
 	LcdCmdWrite(0x89, 0x04);
-	USleep(100);
+	msleep(1);
 
 	//Soft Reset
 	LcdCmdWrite(0x01, 0x01);
@@ -19,7 +19,7 @@ void LcdInit(void)
 
 	//System set
 	LcdCmdWrite(0x10, 0x00);//system config parallel data output 65K
-	USleep(100);
+	msleep(1);
 
 	LcdCmdWrite(0x04, 0x01);
 	//LcdCmdWrite(0x11, 0x00);//data bus of parallel panel 000=RGB
@@ -46,9 +46,9 @@ void LcdInit(void)
 void LcdReset(void)
 {
 	GpioOff(LCD_RST);
-	MSleep(50);
+	msleep(1);
 	GpioOn(LCD_RST);
-	MSleep(50);
+	msleep(1);
 }
 void LcdGpioInit(void)
 {
@@ -139,6 +139,20 @@ void LcdMemClear(void)
 	LcdCmdWrite(0x8E, tmp | 0x80);
 	LcdCheckBusy();
 }
+void LcdWriteBuffer(uint16_t x, uint16_t y, char *buf, int len)
+{
+	LcdDisplayMode(DrawMode);
+	LcdWindowCursor(x, y);
+	LcdRegWrite(0x02);
+	LcdMemWriteStart();
+	for(int i = 0; buf && i < len; i++)
+	{
+		LcdMemWrite(buf[i]);
+		msleep(1);
+	}
+	LcdMemWriteEnd();
+	LcdCheckBusy();
+}
 /*------------------- text function -------------------------*/
 void LcdLayer(int layer)
 {
@@ -165,7 +179,7 @@ void LcdText(uint16_t x, uint16_t y, char *text, int len)
 	for(int i = 0; text && i < len; i++)
 	{
 		LcdMemWrite(text[i]);
-		USleep(100);
+		msleep(1);
 	}
 	LcdMemWriteEnd();
 	LcdCheckBusy();
@@ -182,7 +196,7 @@ void LcdTextColor(uint16_t x, uint16_t y, uint16_t color, char *text, int len)
 	for(int i = 0; text && i < len; i++)
 	{
 		LcdMemWrite(text[i]);
-		USleep(100);
+		msleep(1);
 	}
 	LcdMemWriteEnd();
 	LcdCheckBusy();
@@ -201,7 +215,7 @@ uint16_t x, uint16_t y, uint16_t color, uint8_t zoom, char *text, int len)
 	for(int i = 0; text && i < len; i++)
 	{
 		LcdMemWrite(text[i]);
-		USleep(100);
+		msleep(1);
 	}
 	LcdMemWriteEnd();
 	LcdCheckBusy();
@@ -454,27 +468,27 @@ bool LcdTouch(uint16_t *xx, uint16_t *yy)
 
 	if( LcdTouchXY(&x, &y) )
 	{
-		int t = GetUsecond() - p.time;
+		int t = Msecond() - p.time;
 
-		if( t > 30*1000 )
+		if( t > 30 )
 		{
 			p.x = x;
 			p.y = y;
-			p.time = GetUsecond();
+			p.time = Msecond();
 		}
 		int a = x - p.x;
 		int b = y - p.y;
 		int l = a*a + b*b;
-		if( l > 3 && t < l*1000 )
+		if( l > 3 && t < l )
 		{
 			p.x = x;
 			p.y = y;
-			p.time = GetUsecond();
+			p.time = Msecond();
 			return false;
 		}
 		*xx = p.x = x;
 		*yy = p.y = y;
-		p.time = GetUsecond();
+		p.time = Msecond();
 		return true;
 	}
 	return false;

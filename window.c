@@ -1,92 +1,76 @@
+#include "screen.h"
 #include "window.h"
-#include "screen0.h"
 
-int current_screen = 0;
-struct Window screenx[SCREEN_MAX][WINDOW_MAX];
+#define Wx	(w->x)
+#define Wy	(w->y)
+#define Ww	(w->w)
+#define Wh	(w->h)
+#define Wb	(w->b)
+#define Wf	(w->f)
+#define Wp	(char*)(w->p)
+#define Wl	(w->l)
+#define Ws	(w->s)
+#define Wt	(w->t)
+#define Px	(p->x)
+#define Py	(p->y)
 
-void ScreenTouch(Window *w)
-{
-}
-void ScreenAction(Window *w)
-{
-}
-void WindowInit(void)
-{
-	for(int s = 0; s < SCREEN_MAX; s++)
-	{
-		for(int w = 0; w < WINDOW_MAX; w++)
-		{
-			Window *p = &WINDOW(s,w);
-			p->top.x = 0;
-			p->top.y = 0;
-			p->bot.x = SCREEN_W;
-			p->bot.y = SCREEN_H;
-			p->touch = ScreenTouch;
-			p->action= ScreenAction;
-		}
-	}
-	Screen0Init();
-}
+Screen curren_screen = {0, 0};
 
-void WindowActionScan(void)
+Window* GetWindow(int i)
 {
-	for(int window = 0; window < WINDOW_MAX; window++)
+	if( curren_screen.window )
 	{
-		Window *p = &WINDOW(current_screen, window);
-		if( p->action )
-		{
-			p->action(p);
-		}
+		return curren_screen.window + (i%curren_screen.count);
 	}
+	return NULL;
 }
-void WindowTouchScan(void)
+Screen* GetScreen(void)
 {
-	Point p = {0, 0};
-
-	if( LcdTouch(&p.x, &p.y) == false )
-	{
-		return;
-	}
-	for(int window = 0; window < WINDOW_MAX; window++)
-	{
-		if( WindowMatch(&p, &WINDOW(current_screen, window)) )
-		{
-			return;
-		}
-	}
+	return &curren_screen;
 }
-bool WindowMatch(Point *p, Window *w)
+void SetScreen(Screen *screen)
 {
-	if( p->x < w->top.x )
+	curren_screen.count = screen->count;
+	curren_screen.window = screen->window;
+}
+void WindowShow(Window *w)
+{
+	switch( Ws )
+	{
+		case TextZoom1:
+		case TextZoom2:
+		case TextZoom3:
+		case TextZoom4:
+			LcdDrawRetangleFill(Wx, Wy, Wx+Ww, Wy+Wh, Wb);
+			LcdTextColorZoom(Wx, Wy, Wf, Ws, Wp, Wl);
+			break;
+		case ImageDraw:
+			LcdWindowActive(Wx, Wy, Wx+Ww, Wy+Wh);
+			LcdWriteBuffer(Wx, Wy, Wp, Wl);
+			break;
+		case FillColor:
+			LcdDrawRetangleFill(Wx, Wy, Wx+Ww, Wy+Wh, Wb);
+			break;
+	}
+	Ws = 0;
+}
+bool WindowPoint(Window *w, Point *p)
+{
+	if( Px < Wx )
 	{
 		return false;
 	}
-	if( p->y < w->top.y )
+	if( Py < Wy )
 	{
 		return false;
 	}
-	if( p->x > w->bot.x )
+	if( Px > (Wx + Ww) )
 	{
 		return false;
 	}
-	if( p->y > w->bot.y )
+	if( Py > (Wy + Wh) )
 	{
 		return false;
-	}
-	if( w->touch )
-	{
-		w->touch(w);
 	}
 	return true;
-}
-void WindowBind(int screen, int window, Window *w)
-{
-	Window *p = &WINDOW(screen, window);
-
-	p->top.x = w->top.x;
-	p->top.y = w->top.y;
-	p->bot.x = w->bot.x;
-	p->bot.y = w->bot.y;
-	p->touch = w->touch;
-	p->action= w->action;
 }

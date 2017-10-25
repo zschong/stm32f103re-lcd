@@ -88,7 +88,7 @@ float SHT3xGetTemperature(void)
 		debug("%s SHT3xSendCommand failed!\n ", __func__);
 		return ConverTemperature();
 	}
-	MSleep(20);
+	msleep(20);
 	if( SHT3xRecvBuffer(buf, sizeof(buf)) )
 	{
 		debug("%s SHT3xRecvBuffer failed!\n ", __func__);

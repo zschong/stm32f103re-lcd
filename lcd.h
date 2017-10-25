@@ -165,6 +165,7 @@ uint8_t LcdCmdRead(uint8_t cmd);
 void LcdCmdWrite(uint8_t cmd, uint8_t value);
 void LcdCheckBusy(void);
 void LcdMemClear(void);
+void LcdWriteBuffer(uint16_t x, uint16_t y, char *buf, int len);
 /*------------------- text function -------------------------*/
 void LcdLayer(int layer);
 void LcdText(uint16_t x, uint16_t y, char *text, int len);
