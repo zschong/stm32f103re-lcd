@@ -7,13 +7,14 @@
 
 typedef enum
 {
-	NoAction  = 0,
+	FocusNone = 0,
 	TextZoom1 = 1,
 	TextZoom2 = 2,
 	TextZoom3 = 3,
 	TextZoom4 = 4,
 	FillColor = 5,
 	ImageDraw = 6,
+	FocusDown = 7,
 }WindowStatus;
 
 typedef struct Point

@@ -39,6 +39,7 @@ void LcdInit(void)
 	LcdCmdWrite(0x1E, 0x00);//start position(PCLK)=VSTR1+1
 	LcdCmdWrite(0x1F, 0x82);//pulse width(PCLK)=VPWR+1
 
+	LcdLayer(1);
 	LcdColor65K();
 	LcdWindowClear();
 	LcdWindowActive(0, 0, 319, 239);
@@ -139,9 +140,9 @@ void LcdMemClear(void)
 	LcdCmdWrite(0x8E, tmp | 0x80);
 	LcdCheckBusy();
 }
-void LcdWriteBuffer(uint16_t x, uint16_t y, char *buf, int len)
+void LcdWriteBuffer(u16 x, u16 y, char *buf, int len)
 {
-	LcdDisplayMode(DrawMode);
+	LcdDisplayMode(ImageMode);
 	LcdWindowCursor(x, y);
 	LcdRegWrite(0x02);
 	LcdMemWriteStart();
@@ -153,22 +154,94 @@ void LcdWriteBuffer(uint16_t x, uint16_t y, char *buf, int len)
 	LcdMemWriteEnd();
 	LcdCheckBusy();
 }
-/*------------------- text function -------------------------*/
+/*------------------- layer function -------------------------*/
 void LcdLayer(int layer)
 {
-	uint8_t tmp = LcdCmdRead(0x20);
-
+	uint8_t tmp = LcdCmdRead(0x41) & 0xF0;
 	switch(layer)
 	{
 	case 1:
-		LcdCmdWrite(0x20, tmp & 0x7F);
+		LcdCmdWrite(0x20, LcdCmdRead(0x20) | 0x80);
+		LcdCmdWrite(0x41, tmp | (0 << 2) | (0 << 0));
 		break;
 	case 2:
-		LcdCmdWrite(0x20, tmp | 0x80);
+		LcdCmdWrite(0x20, LcdCmdRead(0x20) | 0x80);
+		LcdCmdWrite(0x41, tmp | (0 << 2) | (1 << 0));
 		break;
 	}
 }
-void LcdText(uint16_t x, uint16_t y, char *text, int len)
+void LcdLayerMode(LayerMode mode)
+{
+	switch( mode )
+	{
+	case Layer1:
+	case Layer2:
+	case LayerGradual:
+	case LayerTranparent:
+	case LayerOR:
+	case LayerAND:
+	case LayerFloating:
+	case LayerFloatingBGTR:
+		LcdCmdWrite(0x52, (LcdCmdRead(0x52)&0x0F)|mode);
+		break;
+	}
+}
+void LcdTransparency(Layer1Transparency t1, Layer2Transparency t2)
+{
+	switch(t1)
+	{
+		case Layer1_8of8:
+		case Layer1_7of8:
+		case Layer1_6of8:
+		case Layer1_5of8:
+		case Layer1_4of8:
+		case Layer1_3of8:
+		case Layer1_2of8:
+		case Layer1_1of8:
+		case Layer1_0of8:
+			break;
+		default:
+			return;
+	}
+	switch(t2)
+	{
+		case Layer2_8of8:
+		case Layer2_7of8:
+		case Layer2_6of8:
+		case Layer2_5of8:
+		case Layer2_4of8:
+		case Layer2_3of8:
+		case Layer2_2of8:
+		case Layer2_1of8:
+		case Layer2_0of8:
+			LcdCmdWrite(0x53, t1|t2);
+	}
+}
+void LcdFloatWindow(u16 x, u16 y, u16 w, u16 h, u16 X, u16 Y)
+{
+	LcdCmdWrite(0xD0, x);
+	LcdCmdWrite(0xD1, x>>8);
+	LcdCmdWrite(0xD2, y);
+	LcdCmdWrite(0xD3, y>>8);
+	LcdCmdWrite(0xD4, w);
+	LcdCmdWrite(0xD5, w>>8);
+	LcdCmdWrite(0xD6, h);
+	LcdCmdWrite(0xD7, h>>8);
+	LcdCmdWrite(0xD8, X);
+	LcdCmdWrite(0xD9, X>>8);
+	LcdCmdWrite(0xDA, Y);
+	LcdCmdWrite(0xDB, Y>>8);
+}
+void LcdFloatWindowColor(u16 x, u16 y, u16 w, u16 h, u16 X, u16 Y, u16 color)
+{
+	LcdFloatWindow(x, y, w, h, X, Y);
+	LcdCmdWrite(0x67, 0x1F & (color >> 11));
+	LcdCmdWrite(0x68, 0x3F & (color >> 5));
+	LcdCmdWrite(0x69, 0x1F & (color >> 0));
+	LcdCheckBusy();
+}
+/*------------------- text function -------------------------*/
+void LcdText(u16 x, u16 y, char *text, int len)
 {
 	LcdWindowActive(0, 0, 319, 239);
 	LcdDisplayMode(TextMode);
@@ -184,7 +257,7 @@ void LcdText(uint16_t x, uint16_t y, char *text, int len)
 	LcdMemWriteEnd();
 	LcdCheckBusy();
 }
-void LcdTextColor(uint16_t x, uint16_t y, uint16_t color, char *text, int len)
+void LcdTextColor(u16 x, u16 y, u16 color, char *text, int len)
 {
 	LcdWindowActive(0, 0, 319, 239);
 	LcdDisplayMode(TextMode);
@@ -201,8 +274,7 @@ void LcdTextColor(uint16_t x, uint16_t y, uint16_t color, char *text, int len)
 	LcdMemWriteEnd();
 	LcdCheckBusy();
 }
-void LcdTextColorZoom(
-uint16_t x, uint16_t y, uint16_t color, uint8_t zoom, char *text, int len)
+void LcdTextColorZoom(u16 x, u16 y, u16 color, u8 zoom, char *text, int len)
 {
 	LcdTextZoom(zoom);
 	LcdTextForgeGroundColor(color);
@@ -220,13 +292,13 @@ uint16_t x, uint16_t y, uint16_t color, uint8_t zoom, char *text, int len)
 	LcdMemWriteEnd();
 	LcdCheckBusy();
 }
-void LcdTextForgeGroundColor(uint16_t color)
+void LcdTextForgeGroundColor(u16 color)
 {
 	LcdCmdWrite(0x63, 0x1F & (color>>11));
 	LcdCmdWrite(0x64, 0x3F & (color>>5));
 	LcdCmdWrite(0x65, 0x1F & (color>>0));
 }
-void LcdTextBackGroundColor(uint16_t color)
+void LcdTextBackGroundColor(u16 color)
 {
 	LcdCmdWrite(0x60, 0x1F & (color>>11));
 	LcdCmdWrite(0x61, 0x3F & (color>>5));
@@ -312,7 +384,7 @@ void LcdTextZoomVertical(int size)
 		break;
 	}
 }
-void LcdTextCursor(uint16_t x, uint16_t y)
+void LcdTextCursor(u16 x, u16 y)
 {
 	LcdCmdWrite(0x2A, x);
 	LcdCmdWrite(0x2B, x>>8);
@@ -320,7 +392,7 @@ void LcdTextCursor(uint16_t x, uint16_t y)
 	LcdCmdWrite(0x2D, y>>8);
 }
 /*-----------------------draw function----------------------------*/
-void LcdDrawLine(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c)
+void LcdDrawLine(u16 x, u16 y, u16 xb, u16 yb, u16 c)
 {
 	LcdCmdWrite(0x91, x);
 	LcdCmdWrite(0x92, x>>8);
@@ -334,7 +406,7 @@ void LcdDrawLine(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c)
 	LcdCmdWrite(0x90, (1<<7)|(0<<4)|(0<<0));
 	LcdCheckBusy();
 }
-void LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c)
+void LcdDrawRetangle(u16 x, u16 y, u16 xb, u16 yb, u16 c)
 {
 	LcdCmdWrite(0x91, x);
 	LcdCmdWrite(0x92, x>>8);
@@ -348,7 +420,7 @@ void LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t 
 	LcdCmdWrite(0x90, (1<<7)|(1<<4)|(0<<0));
 	LcdCheckBusy();
 }
-void LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c)
+void LcdDrawRetangleFill(u16 x, u16 y, u16 xb, u16 yb, u16 c)
 {
 	LcdCmdWrite(0x91, x);
 	LcdCmdWrite(0x92, x>>8);
@@ -362,7 +434,7 @@ void LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint1
 	LcdCmdWrite(0x90, (1<<7)|(1<<5)|(1<<4)|(0<<0));
 	LcdCheckBusy();
 }
-void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
+void LcdDrawCircle(u16 x, u16 y, u16 radius, u16 color)
 {
 	LcdCmdWrite(0x99, x);
 	LcdCmdWrite(0x9A, x>>8);
@@ -374,7 +446,7 @@ void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
 	LcdCmdWrite(0xA0, (1<<7)|(1<<0)|(0<<5));
 	LcdCheckBusy();
 }
-void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
+void LcdDrawCircleFill(u16 x, u16 y, u16 radius, u16 color)
 {
 	LcdCmdWrite(0x99, x);
 	LcdCmdWrite(0x9A, x>>8);
@@ -387,14 +459,14 @@ void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color)
 	LcdCheckBusy();
 }
 /*-----------------window function-----------------------*/
-void LcdWindowCursor(uint16_t x, uint16_t y)
+void LcdWindowCursor(u16 x, u16 y)
 {
 	LcdCmdWrite(0x46, x);
 	LcdCmdWrite(0x47, x>>8);
 	LcdCmdWrite(0x48, y);
 	LcdCmdWrite(0x49, y>>8);
 }
-void LcdWindowActive(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb)
+void LcdWindowActive(u16 x, u16 y, u16 xb, u16 yb)
 {
 	LcdCmdWrite(0x30, x);
 	LcdCmdWrite(0x31, x>>8);
@@ -412,13 +484,14 @@ void LcdWindowClear(void)
 /*------------------------misc function--------------------*/
 void LcdDisplayMode(uint8_t mode)
 {
-	if( mode )
+	switch(mode)
 	{
-		LcdCmdWrite(0x40, LcdCmdRead(0x40) | (1<<7));
-	}
-	else
-	{
+	case ImageMode:
 		LcdCmdWrite(0x40, LcdCmdRead(0x40) & ~(1<<7));
+		break;
+	case TextMode:
+		LcdCmdWrite(0x40, LcdCmdRead(0x40) | (1<<7));
+		break;
 	}
 }
 void LcdColor256(void)
@@ -435,15 +508,15 @@ void LcdTouchInit(void)
 	LcdCmdWrite(0x70, (1<<7)|(3<<4)|(1<<3)|(1<<2));//0xB4:Enable, clk=4096, 16clk
 	LcdCmdWrite(0x71, (0<<6)|(1<<2)|(1<<1));
 }
-bool LcdTouchXY(uint16_t *xp, uint16_t *yp)
+bool LcdTouchXY(u16 *xp, u16 *yp)
 {
 	if( (LcdCmdRead(0xF1) & (1<<2)) == 0 )
 	{
 		return false;
 	}
-	uint16_t x = LcdCmdRead(0x72);
-	uint16_t y = LcdCmdRead(0x73);
-	uint16_t z = LcdCmdRead(0x74);
+	u16 x = LcdCmdRead(0x72);
+	u16 y = LcdCmdRead(0x73);
+	u16 z = LcdCmdRead(0x74);
 	LcdCmdWrite(0xF1, (1<<2));
 	x <<= 2;
 	x |= 3 & (z >> 0);
@@ -456,13 +529,13 @@ bool LcdTouchXY(uint16_t *xp, uint16_t *yp)
 
 	return true;
 }
-bool LcdTouch(uint16_t *xx, uint16_t *yy)
+bool LcdTouch(u16 *xx, u16 *yy)
 {
-	uint16_t x = 0;
-	uint16_t y = 0;
+	u16 x = 0;
+	u16 y = 0;
 	static struct{
-		uint16_t x;
-		uint16_t y;
+		u16 x;
+		u16 y;
 		uint32_t time;
 	}p = {0, 0, 0};
 

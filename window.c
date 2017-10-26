@@ -1,3 +1,4 @@
+#include "delay.h"
 #include "screen.h"
 #include "window.h"
 
@@ -22,7 +23,7 @@ Window* GetWindow(int i)
 	{
 		return curren_screen.window + (i%curren_screen.count);
 	}
-	return NULL;
+	return 0;
 }
 Screen* GetScreen(void)
 {
@@ -41,18 +42,35 @@ void WindowShow(Window *w)
 		case TextZoom2:
 		case TextZoom3:
 		case TextZoom4:
+			LcdLayer(1);
 			LcdDrawRetangleFill(Wx, Wy, Wx+Ww, Wy+Wh, Wb);
 			LcdTextColorZoom(Wx, Wy, Wf, Ws, Wp, Wl);
+			Ws = 0;
 			break;
 		case ImageDraw:
+			LcdLayer(1);
 			LcdWindowActive(Wx, Wy, Wx+Ww, Wy+Wh);
 			LcdWriteBuffer(Wx, Wy, Wp, Wl);
+			Ws = 0;
 			break;
 		case FillColor:
+			LcdLayer(1);
 			LcdDrawRetangleFill(Wx, Wy, Wx+Ww, Wy+Wh, Wb);
+			Ws = 0;
 			break;
+		case FocusDown:
+			if( MTimeout(&Wt, 500) )
+			{
+				static u16 c= GRAY(20);
+				c = ~c;
+				LcdLayer(2);
+				//LcdWindowActive(Wx, Wy, Wx+Ww, Wy+Wh);
+				LcdLayerMode(LayerFloatingBGTR);
+				LcdTransparency(Layer1_8of8, Layer2_2of8);
+				LcdFloatWindow(Wx, Wy, Ww, Wh, Wx, Wy);
+				LcdDrawRetangleFill(Wx, Wy, Wx+Ww, Wy+Wh, c);
+			}
 	}
-	Ws = 0;
 }
 bool WindowPoint(Window *w, Point *p)
 {

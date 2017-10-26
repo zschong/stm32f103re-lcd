@@ -4,9 +4,41 @@
 #include "gpio.h"
 
 typedef enum{
-	DrawMode = 0,
-	TextMode = 1,
-}TextModeType_t;
+	TextMode = 0,
+	ImageMode = 1,
+}DisplayMode;
+typedef enum{
+	Layer1 = 0,
+	Layer2 = 1,
+	LayerGradual = 2,
+	LayerTranparent = 3,
+	LayerOR = 4,
+	LayerAND = 5,
+	LayerFloating = 6,
+	LayerFloatingBGTR = (1<<5)|6,
+}LayerMode;
+typedef enum{
+	Layer1_8of8 = (0 << 4),
+	Layer1_7of8 = (1 << 0),
+	Layer1_6of8 = (2 << 0),
+	Layer1_5of8 = (3 << 0),
+	Layer1_4of8 = (4 << 0),
+	Layer1_3of8 = (5 << 0),
+	Layer1_2of8 = (6 << 0),
+	Layer1_1of8 = (7 << 0),
+	Layer1_0of8 = (8 << 0),
+}Layer1Transparency;
+typedef enum{
+	Layer2_8of8 = (0 << 4),
+	Layer2_7of8 = (1 << 4),
+	Layer2_6of8 = (2 << 4),
+	Layer2_5of8 = (3 << 4),
+	Layer2_4of8 = (4 << 4),
+	Layer2_3of8 = (5 << 4),
+	Layer2_2of8 = (6 << 4),
+	Layer2_1of8 = (7 << 4),
+	Layer2_0of8 = (8 << 4),
+}Layer2Transparency;
 
 #define LCD_X		320
 #define LCD_Y		240
@@ -165,38 +197,39 @@ uint8_t LcdCmdRead(uint8_t cmd);
 void LcdCmdWrite(uint8_t cmd, uint8_t value);
 void LcdCheckBusy(void);
 void LcdMemClear(void);
-void LcdWriteBuffer(uint16_t x, uint16_t y, char *buf, int len);
-/*------------------- text function -------------------------*/
+void LcdWriteBuffer(u16 x, u16 y, char *buf, int len);
+/*------------------- Layer function -------------------------*/
 void LcdLayer(int layer);
-void LcdText(uint16_t x, uint16_t y, char *text, int len);
-void LcdTextColor(uint16_t x, uint16_t y, uint16_t color, char *text, int len);
-void LcdTextColorZoom(
-uint16_t x, uint16_t y, uint16_t color, uint8_t zoom, char *text, int len);
-void LcdTextForgeGroundColor(uint16_t color);
-void LcdTextBackGroundColor(uint16_t color);
+void LcdLayerMode(LayerMode mode);
+void LcdTransparency(Layer1Transparency t1, Layer2Transparency t2);
+void LcdFloatWindow(u16 x, u16 y, u16 w, u16 h, u16 X, u16 Y);
+void LcdFloatWindowColor(u16 x, u16 y, u16 w, u16 h, u16 X, u16 Y, u16 color);
+/*------------------- text function -------------------------*/
+void LcdText(u16 x, u16 y, char *text, int len);
+void LcdTextColor(u16 x, u16 y, u16 color, char *text, int len);
+void LcdTextColorZoom(u16 x, u16 y, u16 color, u8 zoom, char *text, int len);
+void LcdTextForgeGroundColor(u16 color);
+void LcdTextBackGroundColor(u16 color);
 void LcdTextAlignEnable(int enable);
 void LcdTextBackGroundEnable(int enable);
 void LcdTextRotate(int degree);
 void LcdTextZoom(int size);
 void LcdTextZoomHorizontal(int size);
 void LcdTextZoomVertical(int size);
-void LcdTextCursor(uint16_t x, uint16_t y);
-void LcdWindowCursor(uint16_t x, uint16_t y);
-void LcdWindowActive(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb);
+void LcdTextCursor(u16 x, u16 y);
+void LcdWindowCursor(u16 x, u16 y);
+void LcdWindowActive(u16 x, u16 y, u16 xb, u16 yb);
 void LcdWindowClear(void);
 void LcdDisplayMode(uint8_t mode);
 void LcdColor256(void);
 void LcdColor65K(void);
-void 
-LcdDrawLine(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
-void 
-LcdDrawRetangle(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
-void 
-LcdDrawRetangleFill(uint16_t x, uint16_t y, uint16_t xb, uint16_t yb, uint16_t c);
-void LcdDrawCircle(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
-void LcdDrawCircleFill(uint16_t x, uint16_t y, uint16_t radius, uint16_t color);
+void LcdDrawLine(u16 x, u16 y, u16 xb, u16 yb, u16 color);
+void LcdDrawRetangle(u16 x, u16 y, u16 xb, u16 yb, u16 c);
+void LcdDrawRetangleFill(u16 x, u16 y, u16 xb, u16 yb, u16 c);
+void LcdDrawCircle(u16 x, u16 y, u16 radius, u16 color);
+void LcdDrawCircleFill(u16 x, u16 y, u16 radius, u16 color);
 void LcdTouchInit(void);
-bool LcdTouchXY(uint16_t* x, uint16_t* y);
-bool LcdTouch(uint16_t *x, uint16_t *y);
+bool LcdTouchXY(u16* x, u16* y);
+bool LcdTouch(u16 *x, u16 *y);
 
 #endif//__LCD_H__

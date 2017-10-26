@@ -57,13 +57,12 @@ void Screen0Scan(void)
 		Window *w = &screen0.window[i];
 		if( WindowPoint(w, &p) == false )
 		{
+			w->s = FocusNone;
 			continue;	
 		}
-		if(w->s == NoAction && MTimeout(&w->t, 200) )
+		if(w->s == FocusNone && MTimeout(&w->t, 200) )
 		{
-			w->b = ~w->b;
-			w->s = FillColor;
-			//w->t = GetMsecond();
+			w->s = FocusDown;
 		}
 	}
 }
