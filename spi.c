@@ -44,7 +44,7 @@ void SpiConfig(SPI_TypeDef *spix)
 
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStructure.SPI_Mode		= SPI_Mode_Master;
-	SPI_InitStructure.SPI_DataSize	= SPI_DataSize_16b;
+	SPI_InitStructure.SPI_DataSize	= SPI_DataSize_8b;
 	SPI_InitStructure.SPI_CPOL		= SPI_CPOL_Low;
 	SPI_InitStructure.SPI_CPHA		= SPI_CPHA_1Edge;
 	SPI_InitStructure.SPI_NSS		= SPI_NSS_Soft;
@@ -106,6 +106,7 @@ void SpiSendByte(SPI_TypeDef *spix, uint8_t byte)
 
 uint8_t SpiReadByte(SPI_TypeDef *spix)
 {
+	SpiSendByte(spix, 0xff);
 	for(int i = 0; i < 0x1000; i++)
 	{
 		if( SPI_I2S_GetFlagStatus(spix, SPI_I2S_FLAG_RXNE) == SET )

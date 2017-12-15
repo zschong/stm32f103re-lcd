@@ -1,6 +1,6 @@
 #include "window.h"
 
-void KeyAction(void)
+void KeyScan(void)
 {
 
 }

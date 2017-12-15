@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "keyboard.h"
 #include "screen.h"
+#include "flash.h"
 
 
 void SystickInit(void)
@@ -136,6 +137,30 @@ void KeyboardTest(void)
 	Key4() ? LcdDrawRetangleFill(0, 0, 320, 240, GRAY(25)) : LcdCheckBusy();
 
 }
+void FlashTest(void)
+{
+	static uint32_t t = 0;
+
+	if( MTimeout(&t, 1000) )
+	{
+		char buf[32] = {0};
+
+		sprintf(buf, "FlashReadStatus:%08X", FlashReadStatus());
+		LcdDrawRetangleFill(0, 0, 319, 19, GRAY(28));
+		LcdTextColorZoom(0, 2, BLACK, 1, buf, strlen(buf));
+
+		sprintf(buf, "FlashManufactureDeviceID:%08X", FlashManufactureDeviceID());
+		LcdDrawRetangleFill(0, 20, 319, 39, GRAY(28));
+		LcdTextColorZoom(0, 22, BLACK, 1, buf, strlen(buf));
+
+		int hig = 0;
+		int low = 0;
+		FlashReadUniqueID(&hig, &low);
+		sprintf(buf, "FlashReadUniqueID:%08X%08X", hig, low);
+		LcdDrawRetangleFill(0, 40, 319, 59, GRAY(28));
+		LcdTextColorZoom(0, 42, BLACK, 1, buf, strlen(buf));
+	}
+}
 /*------------end of test -----------*/
 
 int main(void)
@@ -148,7 +173,7 @@ int main(void)
 	SHT3xInit();
 	KeyboardInit();
 	LcdTouchInit();
-	Screen0Init();
+	FlashInit();
 
 	while(1)
 	{
@@ -163,7 +188,7 @@ int main(void)
 		//LcdTest();
 		//LcdTouchTest();
 		//KeyboardTest();
-		Screen0Show();
-		Screen0Scan();
+		WindowScan();
+		FlashTest();
 	}
 }

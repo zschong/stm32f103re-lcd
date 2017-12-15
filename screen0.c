@@ -1,8 +1,8 @@
+#include <stdio.h>
+#include <string.h>
 #include "delay.h"
-#include "window.h"
 #include "screen0.h"
-
-#define WINDOW_MAX	9
+#include "keyboard.h"
 
 #define X(v)	(v)	//window.x
 #define Y(v)	(v)	//window.y
@@ -15,6 +15,23 @@
 #define S(v)	(v)	//window.status
 #define T(v)	(v)	//window.status
 
+#define Wx	(w->x)
+#define Wy	(w->y)
+#define Ww	(w->w)
+#define Wh	(w->h)
+#define Wb	(w->b)
+#define Wf	(w->f)
+#define Wp	(char*)(w->p)
+#define Wl	(w->l)
+#define Ws	(w->s)
+#define Wt	(w->t)
+#define Px	(p->x)
+#define Py	(p->y)
+
+
+
+#define WINDOW_MAX	9
+
 static Window window[WINDOW_MAX] = {
 	{X(000), Y(000), W( 60), H( 40), B(  RED), F(0), P(0), L(0), S(FillColor), 0},
 	{X(000), Y( 40), W( 60), H(160), B(GREEN), F(0), P(0), L(0), S(FillColor), 0},
@@ -26,25 +43,15 @@ static Window window[WINDOW_MAX] = {
 	{X(260), Y( 40), W( 60), H(160), B(GREEN), F(0), P(0), L(0), S(FillColor), 0},
 	{X(260), Y(200), W( 60), H( 40), B( BLUE), F(0), P(0), L(0), S(FillColor), 0},
 };
-static Screen screen0 = {WINDOW_MAX, window};
+Screen screen0 = {0, WINDOW_MAX, window, Screen0Scan};
+#define FocusWindow	(screen0.window[screen0.focus%WINDOW_MAX])
 
-void Screen0Init(void)
+void Screen0Scan(Screen *screen)
 {
-	SetScreen(&screen0);
+	Screen0Touch(screen);
+	Screen0Keyboard(screen);
 }
-void Screen0Show(void)
-{
-	WindowShow(screen0.window+0);
-	WindowShow(screen0.window+1);
-	WindowShow(screen0.window+2);
-	WindowShow(screen0.window+3);
-	WindowShow(screen0.window+4);
-	WindowShow(screen0.window+5);
-	WindowShow(screen0.window+6);
-	WindowShow(screen0.window+7);
-	WindowShow(screen0.window+8);
-}
-void Screen0Scan(void)
+void Screen0Touch(Screen* screen)
 {
 	Point p = {0, 0};
 
@@ -58,11 +65,54 @@ void Screen0Scan(void)
 		if( WindowPoint(w, &p) == false )
 		{
 			w->s = FocusNone;
-			continue;	
+			continue;
 		}
-		if(w->s == FocusNone && MTimeout(&w->t, 200) )
+		if( MTimeout(&w->t, 200) )
 		{
-			w->s = FocusDown;
+			if( w->s == FocusDown )
+			{
+				w->s = FocusNone;
+			}
+			else
+			{
+				w->s = FocusDown;
+			}
+			screen0.focus = i;
+			continue;
 		}
+	}
+}
+void Screen0Keyboard(Screen *screen)
+{
+	static uint32_t t = 0;
+
+	if( MTimeout(&t, 200) == false )
+	{
+		return;
+	}
+	if( KeyDown() == false )
+	{
+		return;
+	}
+	if( Key1Ontime() > 1 || Key2Ontime() > 1 ) 
+	{
+		FocusWindow.s = FocusNone;
+		if( 0 == screen0.focus )
+		{
+			screen0.focus = WINDOW_MAX - 1;
+		}
+		else
+		{
+			screen0.focus = screen0.focus-1;
+		}
+		FocusWindow.s = FocusDown;
+		return;
+	}
+	if( Key3Ontime() > 1 || Key4Ontime() > 1 ) 
+	{
+		FocusWindow.s = FocusNone;
+		screen0.focus = (screen0.focus+1) % WINDOW_MAX;
+		FocusWindow.s = FocusDown;
+		return;
 	}
 }

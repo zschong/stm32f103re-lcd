@@ -157,6 +157,7 @@ void LcdWriteBuffer(u16 x, u16 y, char *buf, int len)
 /*------------------- layer function -------------------------*/
 void LcdLayer(int layer)
 {
+	LcdCheckBusy();
 	uint8_t tmp = LcdCmdRead(0x41) & 0xF0;
 	switch(layer)
 	{
@@ -278,7 +279,7 @@ void LcdTextColorZoom(u16 x, u16 y, u16 color, u8 zoom, char *text, int len)
 {
 	LcdTextZoom(zoom);
 	LcdTextForgeGroundColor(color);
-	LcdWindowActive(0, 0, 319, 239);
+	//LcdWindowActive(0, 0, 319, 239);
 	LcdDisplayMode(TextMode);
 	LcdTextBackGroundEnable(0);
 	LcdTextCursor(x, y);

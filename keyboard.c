@@ -85,65 +85,65 @@ bool Key4Change(void)
 }
 uint32_t Key1Ontime(void)
 {
-	if( 0 == key1ontime )
+	if( 0 == Key1() )
 	{
-		return key1ontime;
+		return 0;
 	}
 	return Msecond() - key1ontime;	
 }
 uint32_t Key2Ontime(void)
 {
-	if( 0 == key2ontime )
+	if( 0 == Key2() )
 	{
-		return key2ontime;
+		return 0;
 	}
 	return Msecond() - key2ontime;	
 }
 uint32_t Key3Ontime(void)
 {
-	if( 0 == key3ontime )
+	if( 0 == Key3() )
 	{
-		return key3ontime;
+		return 0;
 	}
 	return Msecond() - key3ontime;	
 }
 uint32_t Key4Ontime(void)
 {
-	if( 0 == key4ontime )
+	if( 0 == Key4() )
 	{
-		return key4ontime;
+		return 0;
 	}
 	return Msecond() - key4ontime;	
 }
 uint32_t Key1Offtime(void)
 {
-	if( 0 == key1offtime )
+	if( 1 == Key1() )
 	{
-		return key1offtime;
+		return 0;
 	}
 	return Msecond() - key1offtime;	
 }
 uint32_t Key2Offtime(void)
 {
-	if( 0 == key2offtime )
+	if( 1 == Key2() )
 	{
-		return key2offtime;
+		return 0;
 	}
 	return Msecond() - key2offtime;	
 }
 uint32_t Key3Offtime(void)
 {
-	if( 0 == key3offtime )
+	if( 1 == Key3() )
 	{
-		return key3offtime;
+		return 0;
 	}
 	return Msecond() - key3offtime;	
 }
 uint32_t Key4Offtime(void)
 {
-	if( 0 == key4offtime )
+	if( 1 == Key4() )
 	{
-		return key4offtime;
+		return 0;
 	}
 	return Msecond() - key4offtime;	
 }
@@ -151,16 +151,8 @@ void Key1Handler(void)
 {
 	if( EXTI_GetFlagStatus(Key1ExtLine) != RESET )
 	{
-		if( 0 == Key1() )
-		{
-			key1ontime = 0;
-			key1offtime = Msecond();
-		}
-		else
-		{
-			key1offtime = 0;
-			key1ontime = Msecond();
-		}
+		key1ontime = Msecond();
+		key1offtime = key1ontime;
 		EXTI_ClearITPendingBit(Key1ExtLine);
 	}
 }
@@ -168,16 +160,8 @@ void Key2Handler(void)
 {
 	if( EXTI_GetFlagStatus(Key2ExtLine) != RESET )
 	{
-		if( 0 == Key2() )
-		{
-			key2ontime = 0;
-			key2offtime = Msecond();
-		}
-		else
-		{
-			key2offtime = 0;
-			key2ontime = Msecond();
-		}
+		key2ontime = Msecond();
+		key2offtime = key2ontime;
 		EXTI_ClearITPendingBit(Key2ExtLine);
 	}
 }
@@ -185,16 +169,8 @@ void Key3Handler(void)
 {
 	if( EXTI_GetFlagStatus(Key3ExtLine) != RESET )
 	{
-		if( 0 == Key3() )
-		{
-			key3ontime = 0;
-			key3offtime = Msecond();
-		}
-		else
-		{
-			key3offtime = 0;
-			key3ontime = Msecond();
-		}
+		key3ontime = Msecond();
+		key3offtime = key3ontime;
 		EXTI_ClearITPendingBit(Key3ExtLine);
 	}
 }
@@ -202,16 +178,8 @@ void Key4Handler(void)
 {
 	if( EXTI_GetFlagStatus(Key4ExtLine) != RESET )
 	{
-		if( 0 == Key4() )
-		{
-			key4ontime = 0;
-			key4offtime = Msecond();
-		}
-		else
-		{
-			key4offtime = 0;
-			key4ontime = Msecond();
-		}
+		key4ontime = Msecond();
+		key4offtime = key4ontime;
 		EXTI_ClearITPendingBit(Key4ExtLine);
 	}
 }

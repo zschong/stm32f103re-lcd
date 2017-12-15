@@ -38,8 +38,10 @@ typedef struct Window
 }Window;
 typedef struct Screen
 {
-	uint32_t count;
+	uint8_t focus;
+	uint8_t count;
 	Window *window;
+	void(*scan)(struct Screen*);
 }Screen;
 
 #define WindowClear(window) \
@@ -68,9 +70,7 @@ do{\
 	window.s = (f9); \
 }while(0)
 
-Window* GetWindow(int i);
-Screen* GetScreen(void);
-void SetScreen(Screen *s);
+void WindowScan(void);
 void WindowShow(Window *w);
 bool WindowPoint(Window *, Point *p);
 

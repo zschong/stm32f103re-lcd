@@ -20,6 +20,7 @@
 #define Key3()		((GPIOB->IDR & GPIO_Pin_3) == 0)
 #define Key4()		((GPIOD->IDR & GPIO_Pin_2) == 0)
 #define Key123()	((GPIOB->IDR & (GPIO_Pin_5|GPIO_Pin_4|GPIO_Pin_3)))
+#define KeyDown()	(Key1() | Key2() | Key3() | Key4())
 
 void KeyboardInit(void);
 bool KeyChange(void);
