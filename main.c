@@ -140,25 +140,48 @@ void KeyboardTest(void)
 void FlashTest(void)
 {
 	static uint32_t t = 0;
+	static uint8_t wdata = 0x55;
+	static uint32_t address = 0x20000;
 
 	if( MTimeout(&t, 1000) )
 	{
-		char buf[32] = {0};
-
-		sprintf(buf, "FlashReadStatus:%08X", FlashReadStatus());
-		LcdDrawRetangleFill(0, 0, 319, 19, GRAY(28));
-		LcdTextColorZoom(0, 2, BLACK, 1, buf, strlen(buf));
-
-		sprintf(buf, "FlashManufactureDeviceID:%08X", FlashManufactureDeviceID());
-		LcdDrawRetangleFill(0, 20, 319, 39, GRAY(28));
-		LcdTextColorZoom(0, 22, BLACK, 1, buf, strlen(buf));
-
-		int hig = 0;
-		int low = 0;
-		FlashReadUniqueID(&hig, &low);
-		sprintf(buf, "FlashReadUniqueID:%08X%08X", hig, low);
-		LcdDrawRetangleFill(0, 40, 319, 59, GRAY(28));
-		LcdTextColorZoom(0, 42, BLACK, 1, buf, strlen(buf));
+		uint8_t s0 = FlashReadStatus0();
+		uint8_t s1 = FlashReadStatus1();
+		uint8_t s2 = FlashReadStatus2();
+		LcdLinePrintf(0, "FlashReadStatus:%02X %02X %02X", s2, s1, s0);
+		LcdLinePrintf(1, "FlashJedecId:%04X", FlashJedecId());
+		LcdLinePrintf(2, "FlashDeviceId:%04X", FlashDeviceId());
+		LcdLinePrintf(3, "FlashUniqueId:%08X%08X", FlashUniqueIdH(), FlashUniqueIdL());
+		char w[256] = {0};
+		char r[256] = {0};
+		for(int i = 0; i < sizeof(w); i++)
+		{
+			w[i] = wdata++;
+		}
+		wdata++ ;
+		memset(r, 0, sizeof(r));
+		FlashSectorErase4K(address);
+		FlashWritePage(address, w, sizeof(w));
+		FlashReadData (address, r, sizeof(r));
+		char buf[36] = {0};
+		for(int i = 0; i < sizeof(buf); i+=3)
+		{
+			snprintf(buf+i, 4, "%02X ", w[i/3]);
+		}
+		LcdLinePrintf(4, "w:[%s]", buf);
+		for(int i = 0; i < sizeof(buf); i+=3)
+		{
+			snprintf(buf+i, 4, "%02X ", r[i/3]);
+		}
+		LcdLinePrintf(5, "r:[%s]", buf);
+		if( memcmp(w, r, sizeof(w)) == 0 )
+		{
+			LcdLinePrintf(6, "w == r");
+		}
+		else
+		{
+			LcdLinePrintf(6, "w != r");
+		}
 	}
 }
 /*------------end of test -----------*/

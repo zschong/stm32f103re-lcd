@@ -1,3 +1,4 @@
+#include <string.h>
 #include "pwm.h"
 #include "lcd.h"
 #include "delay.h"
@@ -566,4 +567,16 @@ bool LcdTouch(u16 *xx, u16 *yy)
 		return true;
 	}
 	return false;
+}
+void LcdLinePrintf(int i, const char *fmt,...)
+{
+	va_list ap;
+	char buf[40];
+
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+
+	LcdDrawRetangleFill(0, i*20, 319, i*20+19, GRAY(28));
+	LcdTextColorZoom(0, i*20+2, BLACK, 1, buf, strlen(buf));
 }

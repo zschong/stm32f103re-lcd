@@ -1,6 +1,90 @@
 #include "spi.h"
 #include "flash.h"
 
+static int FlashReadByte(void)
+{
+	int data = -1;
+
+	for(int i = 0; i < 3; i++)
+	{
+		data = SpiReadByte(SPI2);
+		if( -1 != data )
+		{
+			return data;
+		}
+	}
+	return data;
+}
+static int FlashWriteByte(uint8_t data)
+{
+	for(int i = 0; i < 3; i++)
+	{
+		if( -1 != SpiSendByte(SPI2, data) )
+		{
+			return 0;
+		}
+	}
+	return -1;
+}
+int FlashWriteAddress(int address)
+{
+	if( FlashWriteByte(address >> 16) != 0 )
+	{
+		return -1;
+	}
+	if( FlashWriteByte(address >>  8) != 0 )
+	{
+		return -1;
+	}
+	if( FlashWriteByte(address >>  0) != 0 )
+	{
+		return -1;
+	}
+	return 0;
+}
+int FlashWritePage(int address, char *buf, int len)
+{
+	if( 0 == buf || len < 0 )
+	{
+		return -1;
+	}
+	len %= FLASH_PAGE_SIZE+1;
+	if( FlashWriteAddress(address) )
+	{
+		return -2;
+	}
+	for(int i = 0; i < len; i++)
+	{
+		if( FlashWriteByte(buf[i]) != 0 )
+		{
+			return -3;
+		}
+	}
+	return len;
+}
+int FlashReadPage(int address, char *buf, int len)
+{
+	if( 0 == buf || len < 0 )
+	{
+		return -1;
+	}
+	len %= FLASH_PAGE_SIZE+1;
+	if( FlashWriteAddress(address) )
+	{
+		return -2;
+	}
+	for(int i = 0; i < len; i++)
+	{
+		int data = FlashReadByte();
+		if( -1 == data )
+		{
+			return -3;
+		}
+		buf[i] = (char)(0xff & data);
+	}
+	return len;
+}
+
 void FlashInit(void)
 {
 	GpioInit(MOSI, GPIO_Mode_AF_PP, GPIO_Speed_50MHz);
@@ -8,360 +92,341 @@ void FlashInit(void)
 	GpioInit(CLK, GPIO_Mode_AF_PP, GPIO_Speed_50MHz);
 	GpioInit(SS, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
 	SpiConfig(SPI2);
+	FlashSelectOff();
 }
 void FlashWriteEnable(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x06);
-	GpioOn(SS);
-}
-void FlashWriteEnableVSR(void)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x50);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_ENABLE );
+	FlashSelectOff();
 }
 void FlashWriteDisable(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x05);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_DISABLE );
+	FlashSelectOff();
 }
-int FlashReadStatus(void)
+uint8_t FlashReadStatus0(void)
 {
-	int s = 0;
+	uint8_t s = 0;
 
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x05);
-	s |= (SpiReadByte(SPI2) << 16);
-	GpioOn(SS);
-
-	for(int i = 0; i < 0x1000; i++);
-
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x35);
-	s |= (SpiReadByte(SPI2) << 8);
-	GpioOn(SS);
-
-	for(int i = 0; i < 0x1000; i++);
-
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x15);
-	s |= (SpiReadByte(SPI2) << 0);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_STATUS0 );
+	s = FlashReadByte();
+	s = FlashReadByte();
+	s = FlashReadByte();
+	FlashSelectOff();
 
 	return s;
 }
-int FlashWriteStatus(int status)
+uint8_t FlashReadStatus1(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x01);
-	SpiSendByte(SPI2, status >> 16);
-	GpioOn(SS);
+	uint8_t s = 0;
 
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x31);
-	SpiSendByte(SPI2, status >> 8);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_STATUS1 );
+	s = FlashReadByte();
+	s = FlashReadByte();
+	s = FlashReadByte();
+	FlashSelectOff();
 
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x11);
-	SpiSendByte(SPI2, status >> 0);
-	GpioOn(SS);
+	return s;
+}
+uint8_t FlashReadStatus2(void)
+{
+	uint8_t s = 0;
 
-	return 0;
-}
-void FlashChipErase(void)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0xC7);
-	GpioOn(SS);
-}
-void FlashEraseProgramSuspend(void)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x75);
-	GpioOn(SS);
-}
-void FlashEraseProgramResume(void)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x7A);
-	GpioOn(SS);
-}
-int FlashManufactureDeviceID(void)
-{
-	int id = 0;
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_STATUS2 );
+	s = FlashReadByte();
+	s = FlashReadByte();
+	s = FlashReadByte();
+	FlashSelectOff();
 
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x90);
-	SpiSendByte(SPI2, 0x00);
-	SpiSendByte(SPI2, 0x00);
-	SpiSendByte(SPI2, 0x00);
-	id |= (SpiReadByte(SPI2) <<  8);
-	id |= (SpiReadByte(SPI2) <<  0);
-	GpioOn(SS);
+	return s;
+}
+void FlashWriteStatus0(uint8_t s)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_STATUS0 );
+	FlashWriteByte(s);
+	FlashSelectOff();
+}
+void FlashWriteStatus1(uint8_t s)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_STATUS1 );
+	FlashWriteByte(s);
+	FlashSelectOff();
+}
+void FlashWriteStatus2(uint8_t s)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_STATUS2 );
+	FlashWriteByte(s);
+	FlashSelectOff();
+}
+void FlashSuspend(void)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_SUSPEND );
+	FlashSelectOff();
+}
+void FlashResume(void)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_RESUME );
+	FlashSelectOff();
+}
+uint16_t FlashDeviceId(void)
+{
+	uint16_t id = 0;
+
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_DEVICE_ID );
+	FlashReadByte();
+	FlashReadByte();
+	id |= (FlashReadByte() <<  8);
+	id |= (FlashReadByte() <<  0);
+	FlashSelectOff();
 
 	return id;
 }
-int FlashJEDECID(void)
+uint16_t FlashJedecId(void)
 {
-	int id = 0;
+	uint16_t id = 0;
 
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x9F);
-	id |= (SpiReadByte(SPI2) << 16);
-	id |= (SpiReadByte(SPI2) <<  8);
-	id |= (SpiReadByte(SPI2) <<  0);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_JEDEC_ID );
+	FlashReadByte();
+	id |= (FlashReadByte() <<  8);
+	id |= (FlashReadByte() <<  0);
+	FlashSelectOff();
 
 	return id;
 }
 int FlashGlobalBlockLock(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x7E);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_GBLOCK_LOCK );
+	FlashSelectOff();
 
 	return 0;
 }
 int FlashGlobalBlockUnlock(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x98);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_GBLOCK_UNLOCK );
+	FlashSelectOff();
 
 	return 0;
 }
 int FlashEnterQPIMode(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x38);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_QPI_MODE );
+	FlashSelectOff();
 
 	return 0;
 }
 int FlashEnableReset(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x66);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ENABLE_RESET );
+	FlashSelectOff();
 
 	return 0;
 }
 int FlashResetDevice(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x99);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_RESET_DEVICE );
+	FlashSelectOff();
 
 	return 0;
 }
-void FlashReadUniqueID(int *hig, int *low)
+uint32_t FlashUniqueIdH(void)
 {
-	if( 0 == hig || 0 == low )
-	{
-		return;
-	}
-	*hig = 0;
-	*low = 0;
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x4B);
-	SpiSendByte(SPI2, 0xFF);
-	SpiSendByte(SPI2, 0xFF);
-	SpiSendByte(SPI2, 0xFF);
-	SpiSendByte(SPI2, 0xFF);
-	*hig |= (SpiReadByte(SPI2) << 24);
-	*hig |= (SpiReadByte(SPI2) << 16);
-	*hig |= (SpiReadByte(SPI2) <<  8);
-	*hig |= (SpiReadByte(SPI2) <<  0);
-	*low |= (SpiReadByte(SPI2) << 24);
-	*low |= (SpiReadByte(SPI2) << 16);
-	*low |= (SpiReadByte(SPI2) <<  8);
-	*low |= (SpiReadByte(SPI2) <<  0);
-	GpioOn(SS);
+	uint32_t hig = 0;
+	uint32_t low = 0;
+
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_UNIQUE_ID );
+	FlashReadByte(); 
+	FlashReadByte(); 
+	FlashReadByte(); 
+	FlashReadByte(); 
+	hig |= (FlashReadByte() << 24);
+	hig |= (FlashReadByte() << 16);
+	hig |= (FlashReadByte() <<  8);
+	hig |= (FlashReadByte() <<  0);
+	low |= (FlashReadByte() << 24);
+	low |= (FlashReadByte() << 16);
+	low |= (FlashReadByte() <<  8);
+	low |= (FlashReadByte() <<  0);
+	FlashSelectOff();
+
+	return hig;
 }
-int FlashPageProgram(int address, char *buf, int len)
+uint32_t FlashUniqueIdL(void)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x02);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	for(int i = 0; i < len && buf; i++)
-	{
-		SpiSendByte(SPI2, buf[i]);
-	}
-	GpioOn(SS);
+	uint32_t hig = 0;
+	uint32_t low = 0;
+
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_UNIQUE_ID );
+	FlashReadByte(); 
+	FlashReadByte(); 
+	FlashReadByte(); 
+	FlashReadByte(); 
+	hig |= (FlashReadByte() << 24);
+	hig |= (FlashReadByte() << 16);
+	hig |= (FlashReadByte() <<  8);
+	hig |= (FlashReadByte() <<  0);
+	low |= (FlashReadByte() << 24);
+	low |= (FlashReadByte() << 16);
+	low |= (FlashReadByte() <<  8);
+	low |= (FlashReadByte() <<  0);
+	FlashSelectOff();
+
+	return low;
+}
+void FlashSectorErase4K(int address)
+{
+	FlashWriteEnable();
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ERASE_SECTOR4K );
+	FlashWriteAddress( address );
+	FlashSelectOff();
+	FlashWaitBusy();
+	FlashWriteDisable();
+}
+void FlashBlockErase32K(int address)
+{
+	FlashWriteEnable();
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ERASE_BLOCK32K );
+	FlashWriteAddress( address );
+	FlashSelectOff();
+	FlashWaitBusy();
+	FlashWriteDisable();
+}
+void FlashBlockErase64K(int address)
+{
+	FlashWriteEnable();
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ERASE_BLOCK64K );
+	FlashWriteAddress( address );
+	FlashSelectOff();
+	FlashWaitBusy();
+	FlashWriteDisable();
+}
+void FlashChipErase(void)
+{
+	FlashWriteEnable();
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ERASE_CHIP );
+	FlashSelectOff();
+	FlashWaitBusy();
+	FlashWriteDisable();
+}
+void FlashWaitBusy(void)
+{
+	while( FlashReadStatus0() & FLASH_STATUS_BUSY );
+}
+int FlashReadData(int address, char *buf, int len)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_DATA );
+	FlashReadPage(address, buf, len);
+	FlashSelectOff();
 
 	return len;
 }
-int FlashQuadPageProgram(int address, char *buf, int len)
+int FlashReadFast(int address, char *buf, int len)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x32);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	for(int i = 0; i < len && buf; i++)
-	{
-		SpiSendByte(SPI2, buf[i]);
-	}
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_FAST );
+	FlashReadPage(address, buf, len);
+	FlashSelectOff();
 
 	return len;
 }
-int FlashSectorErase4K(int address)
+int FlashWriteData(int address, char *buf, int len)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x20);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	GpioOn(SS);
+	FlashWriteEnable();
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_DATA );
+	FlashWritePage(address, buf, len);
+	FlashSelectOff();
+	FlashWaitBusy();
+	FlashWriteDisable();
 
-	return 0;
+	return len;
 }
-int FlashBlockErase32K(int address)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x52);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	GpioOn(SS);
-
-	return 0;
-}
-int FlashBlockErase64K(int address)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0xD8);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	GpioOn(SS);
-
-	return 0;
-}
-int FlashReadData(int address)
+int FlashSfdpId(int address)
 {
 	uint8_t s1 = 0;
 
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x03);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	s1 = SpiReadByte(SPI2);
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_SFDP_ID );
+	FlashWriteAddress( address );
+	s1 = FlashReadByte();
+	s1 = FlashReadByte();
+	FlashSelectOff();
 
 	return s1;
 }
-int FlashFastRead(int address)
+int FlashEraseSecurityId(int address)
 {
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ERASE_SECURITY_ID );
+	FlashWriteAddress( address );
+	FlashSelectOff();
 
 	return 0;
 }
-int FlashFastReadDualOutput(int address, char *buf, int len)
+int FlashWriteSecurityId(int address, char *buf, int len)
 {
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_SECURITY_ID );
+	FlashWritePage(address, buf, len);
+	FlashSelectOff();
 
 	return 0;
 }
-int FlashFastReadQuadOutput(int address, char *buf, int len)
+int FlashReadSecurityId(int address, char *buf, int len)
 {
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_SECURITY_ID );
+	FlashWritePage(address, buf, len);
+	FlashSelectOff();
 
 	return 0;
 }
-int FlashSFDPRegister(int address)
+void FlashIndividualBlockLock(int address)
 {
-	uint8_t s1 = 0;
-
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x5A);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	s1 = SpiReadByte(SPI2);
-	s1 = SpiReadByte(SPI2);
-	GpioOn(SS);
-
-	return s1;
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_INDVIDUAL_BLOCK_LOCK );
+	FlashWriteAddress( address );
+	FlashSelectOff();
 }
-int FlashEraseSecurityRegister(int address)
+void FlashIndividualBlockUnlock(int address)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x44);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	GpioOn(SS);
-
-	return 0;
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_INDVIDUAL_BLOCK_LOCK );
+	FlashWriteAddress( address );
+	FlashSelectOff();
 }
-int FlashProgramSecurityRegister(int address, char *buf, int len)
+uint8_t FlashReadBlockLock(int address)
 {
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x42);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	for(int i = 0; (i < len) && buf; i++)
-	{
-		SpiSendByte(SPI2, buf[i]);
-	}
-	GpioOn(SS);
+	uint8_t lock = 0;
 
-	return 0;
-}
-int FlashReadSecurityRegister(int address, char *buf, int len)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x48);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	for(int i = 0; (i < len) && buf; i++)
-	{
-		buf[i] = SpiReadByte(SPI2);
-	}
-	GpioOn(SS);
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_READ_BLOCK_LOCK );
+	FlashWriteAddress( address );
+	lock = FlashReadByte();
+	FlashSelectOff();
 
-	return 0;
-}
-int FlashIndividualBlockLock(int address)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x36);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	GpioOn(SS);
-
-	return 0;
-}
-int FlashIndividualBlockUnlock(int address)
-{
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x39);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	GpioOn(SS);
-
-	return 0;
-}
-int FlashReadBlockLock(int address)
-{
-	uint8_t s1 = 0;
-
-	GpioOff(SS);
-	SpiSendByte(SPI2, 0x3D);
-	SpiSendByte(SPI2, address >> 16);
-	SpiSendByte(SPI2, address >>  8);
-	SpiSendByte(SPI2, address >>  0);
-	s1 = SpiReadByte(SPI2);
-	GpioOn(SS);
-
-	return s1;
+	return lock;
 }

@@ -1,6 +1,8 @@
 /* RA8875 */
 #ifndef __LCD_H__
 #define __LCD_H__
+#include <stdio.h>
+#include <stdarg.h>
 #include "gpio.h"
 
 typedef enum{
@@ -231,5 +233,6 @@ void LcdDrawCircleFill(u16 x, u16 y, u16 radius, u16 color);
 void LcdTouchInit(void);
 bool LcdTouchXY(u16* x, u16* y);
 bool LcdTouch(u16 *x, u16 *y);
+void LcdLinePrintf(int i, const char *fmt, ...);
 
 #endif//__LCD_H__
