@@ -1,7 +1,7 @@
 #include "gpio.h"
 
 
-GPIO_TypeDef *GetPort(int gpio)
+static GPIO_TypeDef *GetPort(int gpio)
 {
 	switch(gpio >> 24)
 	{
@@ -22,7 +22,6 @@ GPIO_TypeDef *GetPort(int gpio)
 	}
 	return GPIOG;
 }
-
 static int GetPin(int pin)
 {
 	switch( 0xffff & pin)
@@ -78,8 +77,7 @@ static int GetPin(int pin)
 	}
 	return (0xffff & pin);
 }
-
-void GpioClock(GPIO_TypeDef *gpiox)
+static void GpioClock(GPIO_TypeDef *gpiox)
 {
 	switch((uint32_t)gpiox)
 	{
@@ -106,8 +104,7 @@ void GpioClock(GPIO_TypeDef *gpiox)
 			break;
 	}
 }
-
-void GpioConfig(GPIO_TypeDef *gpiox, int pin, int mode, int speed)
+static void GpioConfig(GPIO_TypeDef *gpiox, int pin, int mode, int speed)
 {
 		GPIO_InitTypeDef init;
 
@@ -117,17 +114,14 @@ void GpioConfig(GPIO_TypeDef *gpiox, int pin, int mode, int speed)
 		init.GPIO_Speed = (GPIOSpeed_TypeDef)speed;
 		GPIO_Init(gpiox, &init);
 }
-
-void GpioPinOn(GPIO_TypeDef* gpiox, uint32_t pin)
+static void GpioPinOn(GPIO_TypeDef* gpiox, uint32_t pin)
 {
 	GPIO_SetBits(gpiox, GetPin(pin));
 }
-
-void GpioPinOff(GPIO_TypeDef* gpiox, uint32_t pin)
+static void GpioPinOff(GPIO_TypeDef* gpiox, uint32_t pin)
 {
 	GPIO_ResetBits(gpiox, GetPin(pin));
 }
-
 
 void GpioInit(int gpio, int mode, int speed)
 {
@@ -139,12 +133,10 @@ void GpioInit(int gpio, int mode, int speed)
 	init.GPIO_Speed = (GPIOSpeed_TypeDef)speed;
 	GPIO_Init(GetPort(gpio), &init);
 }
-
 void GpioOn(int gpio)
 {
 	GPIO_SetBits(GetPort(gpio), (0xffff & gpio));
 }
-
 void GpioOff(int gpio)
 {
 	GPIO_ResetBits(GetPort(gpio), (0xffff & gpio));
