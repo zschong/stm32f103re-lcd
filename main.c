@@ -11,6 +11,7 @@
 #include "keyboard.h"
 #include "screen.h"
 #include "flash.h"
+#include "filesystem.h"
 
 
 void SystickInit(void)
@@ -140,47 +141,26 @@ void KeyboardTest(void)
 void FlashTest(void)
 {
 	static uint32_t t = 0;
-	static uint8_t wdata = 0x55;
-	static uint32_t address = 0x20000;
+	static uint32_t address = 0x10000;
 
 	if( MTimeout(&t, 1000) )
 	{
-		uint8_t s0 = FlashReadStatus0();
-		uint8_t s1 = FlashReadStatus1();
-		uint8_t s2 = FlashReadStatus2();
-		LcdLinePrintf(0, "FlashReadStatus:%02X %02X %02X", s2, s1, s0);
-		LcdLinePrintf(1, "FlashJedecId:%04X", FlashJedecId());
-		LcdLinePrintf(2, "FlashDeviceId:%04X", FlashDeviceId());
-		LcdLinePrintf(3, "FlashUniqueId:%08X%08X", FlashUniqueIdH(), FlashUniqueIdL());
-		char w[256] = {0};
-		char r[256] = {0};
+		char w[1234];
+		char r[1234];
 		for(int i = 0; i < sizeof(w); i++)
 		{
-			w[i] = wdata++;
+			w[i] = (char)(i + i%7 + i%5 + i%11);
 		}
-		wdata++ ;
-		memset(r, 0, sizeof(r));
-		FlashSectorErase4K(address);
-		FlashWritePage(address, w, sizeof(w));
-		FlashReadData (address, r, sizeof(r));
-		char buf[36] = {0};
-		for(int i = 0; i < sizeof(buf); i+=3)
+		LcdLinePrintf(0, "erase=%d", FileSystemErase(address, sizeof(w)));
+		LcdLinePrintf(1, "write=%d", FileSystemWrite(address, w, sizeof(w)));
+		LcdLinePrintf(2, "read=%d", FileSystemRead(address, r, sizeof(r)));
+		for(int i = 0; i < sizeof(r); i++)
 		{
-			snprintf(buf+i, 4, "%02X ", w[i/3]);
-		}
-		LcdLinePrintf(4, "w:[%s]", buf);
-		for(int i = 0; i < sizeof(buf); i+=3)
-		{
-			snprintf(buf+i, 4, "%02X ", r[i/3]);
-		}
-		LcdLinePrintf(5, "r:[%s]", buf);
-		if( memcmp(w, r, sizeof(w)) == 0 )
-		{
-			LcdLinePrintf(6, "w == r");
-		}
-		else
-		{
-			LcdLinePrintf(6, "w != r");
+			if( r[i] != w[i] )
+			{
+				LcdLinePrintf(3, "r[%d]=%02X != w[%d]=%02X", i, r[i], i, w[i]);
+				break;
+			}
 		}
 	}
 }

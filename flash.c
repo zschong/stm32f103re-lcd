@@ -1,4 +1,5 @@
 #include "spi.h"
+#include "lcd.h"
 #include "flash.h"
 
 static int FlashReadByte(void)
@@ -42,48 +43,6 @@ int FlashWriteAddress(int address)
 	}
 	return 0;
 }
-int FlashWritePage(int address, char *buf, int len)
-{
-	if( 0 == buf || len < 0 )
-	{
-		return -1;
-	}
-	len %= FLASH_PAGE_SIZE+1;
-	if( FlashWriteAddress(address) )
-	{
-		return -2;
-	}
-	for(int i = 0; i < len; i++)
-	{
-		if( FlashWriteByte(buf[i]) != 0 )
-		{
-			return -3;
-		}
-	}
-	return len;
-}
-int FlashReadPage(int address, char *buf, int len)
-{
-	if( 0 == buf || len < 0 )
-	{
-		return -1;
-	}
-	len %= FLASH_PAGE_SIZE+1;
-	if( FlashWriteAddress(address) )
-	{
-		return -2;
-	}
-	for(int i = 0; i < len; i++)
-	{
-		int data = FlashReadByte();
-		if( -1 == data )
-		{
-			return -3;
-		}
-		buf[i] = (char)(0xff & data);
-	}
-	return len;
-}
 
 void FlashInit(void)
 {
@@ -92,6 +51,18 @@ void FlashInit(void)
 	GpioInit(CLK, GPIO_Mode_AF_PP, GPIO_Speed_50MHz);
 	GpioInit(SS, GPIO_Mode_Out_PP, GPIO_Speed_50MHz);
 	SpiConfig(SPI2);
+	FlashSelectOff();
+}
+void FlashResume(void)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_RESUME );
+	FlashSelectOff();
+}
+void FlashSuspend(void)
+{
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_WRITE_SUSPEND );
 	FlashSelectOff();
 }
 void FlashWriteEnable(void)
@@ -166,17 +137,9 @@ void FlashWriteStatus2(uint8_t s)
 	FlashWriteByte(s);
 	FlashSelectOff();
 }
-void FlashSuspend(void)
+void FlashWaitBusy(void)
 {
-	FlashSelectOn();
-	FlashWriteByte( FLASH_CMD_WRITE_SUSPEND );
-	FlashSelectOff();
-}
-void FlashResume(void)
-{
-	FlashSelectOn();
-	FlashWriteByte( FLASH_CMD_WRITE_RESUME );
-	FlashSelectOff();
+	while( FlashReadStatus0() & FLASH_STATUS_BUSY );
 }
 uint16_t FlashDeviceId(void)
 {
@@ -291,6 +254,15 @@ uint32_t FlashUniqueIdL(void)
 
 	return low;
 }
+void FlashChipErase(void)
+{
+	FlashWriteEnable();
+	FlashSelectOn();
+	FlashWriteByte( FLASH_CMD_ERASE_CHIP );
+	FlashSelectOff();
+	FlashWaitBusy();
+	FlashWriteDisable();
+}
 void FlashSectorErase4K(int address)
 {
 	FlashWriteEnable();
@@ -321,48 +293,78 @@ void FlashBlockErase64K(int address)
 	FlashWaitBusy();
 	FlashWriteDisable();
 }
-void FlashChipErase(void)
+int FlashWriteData(int address, char *buf, int len)
 {
-	FlashWriteEnable();
-	FlashSelectOn();
-	FlashWriteByte( FLASH_CMD_ERASE_CHIP );
-	FlashSelectOff();
-	FlashWaitBusy();
-	FlashWriteDisable();
-}
-void FlashWaitBusy(void)
-{
-	while( FlashReadStatus0() & FLASH_STATUS_BUSY );
+	int space = FLASH_PAGE_SPACE(address);
+
+	if( space < len )
+	{
+		len = space;
+	}
+	if( FlashWriteAddress(address) )
+	{
+		return -2;
+	}
+	for(int i = 0; i < len; i++)
+	{
+		if( FlashWriteByte(buf[i]) != 0 )
+		{
+			return -3;
+		}
+	}
+	return len;
 }
 int FlashReadData(int address, char *buf, int len)
 {
+	int space = FLASH_PAGE_SPACE(address);
+
+	if( space < len )
+	{
+		len = space;
+	}
+	for(int i = 0; i < len; i++)
+	{
+		int data = FlashReadByte();
+		if( -1 == data )
+		{
+			return -3;
+		}
+		buf[i] = (char)(0xff & data);
+	}
+	return len;
+}
+int FlashReadPage(int address, char *buf, int len)
+{
 	FlashSelectOn();
-	FlashWriteByte( FLASH_CMD_READ_DATA );
-	FlashReadPage(address, buf, len);
+	FlashWriteByte( FLASH_CMD_READ_PAGE );
+	FlashWriteAddress(address);
+	int ret = FlashReadData(address, buf, len);
 	FlashSelectOff();
 
-	return len;
+	return ret;
 }
 int FlashReadFast(int address, char *buf, int len)
 {
 	FlashSelectOn();
 	FlashWriteByte( FLASH_CMD_READ_FAST );
-	FlashReadPage(address, buf, len);
+	FlashWriteAddress(address);
+	FlashReadByte();
+	int ret = FlashReadData(address, buf, len);
 	FlashSelectOff();
 
-	return len;
+	return ret;
 }
-int FlashWriteData(int address, char *buf, int len)
+int FlashWritePage(int address, char *buf, int len)
 {
 	FlashWriteEnable();
 	FlashSelectOn();
-	FlashWriteByte( FLASH_CMD_WRITE_DATA );
-	FlashWritePage(address, buf, len);
+	FlashWriteByte( FLASH_CMD_WRITE_PAGE );
+	int ret = FlashWriteData(address, buf, len);
 	FlashSelectOff();
 	FlashWaitBusy();
 	FlashWriteDisable();
 
-	return len;
+	return ret; 
 }
 int FlashSfdpId(int address)
 {
@@ -390,7 +392,7 @@ int FlashWriteSecurityId(int address, char *buf, int len)
 {
 	FlashSelectOn();
 	FlashWriteByte( FLASH_CMD_WRITE_SECURITY_ID );
-	FlashWritePage(address, buf, len);
+	FlashWriteData(address, buf, len);
 	FlashSelectOff();
 
 	return 0;
@@ -399,7 +401,7 @@ int FlashReadSecurityId(int address, char *buf, int len)
 {
 	FlashSelectOn();
 	FlashWriteByte( FLASH_CMD_READ_SECURITY_ID );
-	FlashWritePage(address, buf, len);
+	FlashWriteData(address, buf, len);
 	FlashSelectOff();
 
 	return 0;

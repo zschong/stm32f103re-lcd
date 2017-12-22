@@ -8,7 +8,7 @@ void ExtiInit(int pin, int mode, int trigger)
 	uint32_t pinsrc = GPIO_PinSource0;
 	uint32_t portsrc = GPIO_PortSourceGPIOA;
 
-	switch( (uint32_t)GetPort(pin) )
+	switch( (uint32_t)GpioPort(pin) )
 	{
 	case (uint32_t)GPIOA:
 		portsrc = GPIO_PortSourceGPIOA;

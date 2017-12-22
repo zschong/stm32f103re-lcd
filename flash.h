@@ -10,7 +10,22 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int   uint32_t;
 
-#define FLASH_PAGE_SIZE		256
+#define FLASH_CHIP_SIZE			(1<<24)//16M
+#define FLASH_PAGE_SIZE			(1<<8)//256
+#define FLASH_SECTOR_SIZE		(1<<12)//4K
+#define FLASH_BLOCK32_SIZE		(1<<15)//32K
+#define FLASH_BLOCK64_SIZE		(1<<16)//64K
+#define FLASH_PAGE_MASK			(FLASH_PAGE_SIZE-1)
+#define FLASH_SECTOR_MASK		(FLASH_SECTOR_SIZE-1)
+#define FLASH_BLOCK32_MASK		(FLASH_BLOCK32_SIZE-1)
+#define FLASH_BLOCK64_MASK		(FLASH_BLOCK64_SIZE-1)
+#define FLASH_PAGE_ADDR_MASK	(~FLASH_PAGE_MASK)
+#define FLASH_SECTOR_ADDR_MASK	(~FLASH_SECTOR_MASK)
+#define FLASH_BLOCK32_ADDR_MASK	(~FLASH_BLOCK32_MASK)
+#define FLASH_BLOCK64_ADDR_MASK	(~FLASH_BLOCK64_MASK)
+#define FLASH_PAGE_DATA(x)		(FLASH_PAGE_MASK & (x))
+#define FLASH_PAGE_SPACE(x)		(FLASH_PAGE_SIZE - FLASH_PAGE_DATA(x))
+
 #define FLASH_STATUS_BUSY	0x01
 #define FLASH_STATUS_WEL	0x02
 #define FLASH_STATUS_PB210	0x1C
@@ -38,8 +53,8 @@ typedef unsigned int   uint32_t;
 #define FLASH_CMD_POWER_DOWN		0xB9
 #define FLASH_CMD_ENABLE_RESET		0x66
 #define FLASH_CMD_RESET_DEVICE		0x99
-#define FLASH_CMD_WRITE_DATA		0x02
-#define FLASH_CMD_READ_DATA			0x03
+#define FLASH_CMD_WRITE_PAGE		0x02
+#define FLASH_CMD_READ_PAGE			0x03
 #define FLASH_CMD_READ_FAST			0x0B
 #define FLASH_CMD_ERASE_CHIP		0xC7
 #define FLASH_CMD_ERASE_SECTOR4K	0x20
@@ -52,44 +67,51 @@ typedef unsigned int   uint32_t;
 #define FLASH_CMD_INDVIDUAL_BLOCK_LOCK		0x36
 #define FLASH_CMD_INDVIDUAL_BLOCK_UNLOCK	0x39
 
-#define FlashDelay()		do{for(int i = 0; i < 0x100; i++);}while(0)
+#define FlashDelay()		do{for(int i = 0; i < 0x10; i++);}while(0)
 #define FlashSelectOn()		GpioOff(SS)
 #define FlashSelectOff()	GpioOn(SS)
 
 void FlashInit(void);
-void FlashWriteEnable(void);
-void FlashWriteDisable(void);
+
+uint16_t FlashJedecId(void);
+uint16_t FlashDeviceId(void);
+uint32_t FlashUniqueIdH(void);
+uint32_t FlashUniqueIdL(void);
+uint8_t FlashReadBlockLock(int address);
+
 uint8_t FlashReadStatus0(void);
 uint8_t FlashReadStatus1(void);
 uint8_t FlashReadStatus2(void);
-void FlashWriteStatus0(uint8_t s);
-void FlashWriteStatus1(uint8_t s);
-void FlashWriteStatus2(uint8_t s);
-void FlashSuspend(void);
-void FlashResume(void);
+
+void FlashWriteStatus0(uint8_t);
+void FlashWriteStatus1(uint8_t);
+void FlashWriteStatus2(uint8_t);
+
 int FlashGlobalBlockLock(void);
 int FlashGlobalBlockUnlock(void);
-int FlashEnterQPIMode(void);
+
 int FlashEnableReset(void);
 int FlashResetDevice(void);
-uint16_t FlashDeviceId(void);
-uint16_t FlashJedecId(void);
-uint32_t FlashUniqueIdH(void);
-uint32_t FlashUniqueIdL(void);
+int FlashEnterQPIMode(void);
+int FlashSfdpId(int address);
+
+int FlashEraseSecurityId(int address);
+int FlashReadSecurityId (int address, char *buf, int len);
+int FlashWriteSecurityId(int address, char *buf, int len);
+
+void FlashIndividualBlockLock(int address);
+void FlashIndividualBlockUnlock(int address);
+
+void FlashResume(void);
+void FlashSuspend(void);
+
+void FlashChipErase(void);
 void FlashSectorErase4K(int address);
 void FlashBlockErase32K(int address);
 void FlashBlockErase64K(int address);
-void FlashChipErase(void);
-void FlashWaitBusy(void);
-int FlashReadData(int address, char *buf, int len);
+
+int FlashReadPage(int address, char *buf, int len);
 int FlashReadFast(int address, char *buf, int len);
 int FlashWritePage(int address, char *buf, int len);
-int FlashSfdpId(int address);
-int FlashEraseSecurityId(int address);
-int FlashWriteSecurityId(int address, char *buf, int len);
-int FlashReadSecurityId(int address, char *buf, int len);
-void FlashIndividualBlockLock(int address);
-void FlashIndividualBlockUnlock(int address);
-uint8_t FlashReadBlockLock(int address);
 
 #endif//__FLASH_H__

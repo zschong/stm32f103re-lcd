@@ -568,7 +568,7 @@ bool LcdTouch(u16 *xx, u16 *yy)
 	}
 	return false;
 }
-void LcdLinePrintf(int i, const char *fmt,...)
+void LcdLinePrintf(int ln, const char *fmt,...)
 {
 	va_list ap;
 	char buf[40];
@@ -577,6 +577,6 @@ void LcdLinePrintf(int i, const char *fmt,...)
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
-	LcdDrawRetangleFill(0, i*20, 319, i*20+19, GRAY(28));
-	LcdTextColorZoom(0, i*20+2, BLACK, 1, buf, strlen(buf));
+	LcdDrawRetangleFill(0, ln*20, 319, ln*20+19, GRAY(28));
+	LcdTextColorZoom(0, ln*20+2, BLACK, 1, buf, strlen(buf));
 }

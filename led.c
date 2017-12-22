@@ -6,7 +6,7 @@ void LedInit(void)
 }
 char LedGetValue(int id)
 {
-	return GpioOutputValue(RUNING);
+	return (GpioOutputValue(RUNING) != 0);
 }
 void LedSetValue(int id, int value)
 {
