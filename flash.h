@@ -10,11 +10,11 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int   uint32_t;
 
-#define FLASH_CHIP_SIZE			(1<<24)//16M
+#define FLASH_CHIP_SIZE			(8<<20)//8M
 #define FLASH_PAGE_SIZE			(1<<8)//256
 #define FLASH_SECTOR_SIZE		(1<<12)//4K
 #define FLASH_BLOCK32_SIZE		(1<<15)//32K
-#define FLASH_BLOCK64_SIZE		(1<<16)//64K
+#define FLASH_BLOCK64_SIZE		(1<<16)//64k
 #define FLASH_PAGE_MASK			(FLASH_PAGE_SIZE-1)
 #define FLASH_SECTOR_MASK		(FLASH_SECTOR_SIZE-1)
 #define FLASH_BLOCK32_MASK		(FLASH_BLOCK32_SIZE-1)

@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 #include "debug.h"
 #include "delay.h"
 
@@ -38,16 +41,21 @@ void UsartConfig(USART_TypeDef *usartx, int baud, int parity, int bsize, int sto
 }
 uint32_t UsartSend(USART_TypeDef* usartx, char *buf, int len)
 {
+	GpioOn(USART1_RT);
 	for(int i = 0; usartx && buf && i < len; i++)
 	{
 		USART_SendData(usartx, (uint8_t)buf[i]);
 		while( USART_GetFlagStatus(usartx, USART_FLAG_TXE) == RESET );
 	}
+	for(int i = 0; i < 0x2000; i++);
+	GpioOff(USART1_RT);
 	return len;
 }
 uint32_t UsartRecv(USART_TypeDef* usartx, char *buf, int len)
 {
 	char *p = buf;
+
+	GpioOff(USART1_RT);
 	for(int i = 0; usartx && buf && i < len; i++)
 	{
 		int timeout = 0x1000;
@@ -63,24 +71,26 @@ uint32_t UsartRecv(USART_TypeDef* usartx, char *buf, int len)
 	}
 	return (uint32_t)(p - buf);
 }
+uint32_t UsartPrintf(USART_TypeDef *usartx, const char*fmt, ...)
+{
+	va_list ap;
+	char buf[256];
 
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
 
-///重定向c库函数printf到串口，重定向后可使用printf函数
+	return UsartSend(usartx, buf, strlen(buf));
+}
 int fputc(int ch, FILE *f)
 {
-	/* 发送一个字节数据到串口 */
 	USART_SendData(USART1, (uint8_t) ch);
-	
-	/* 等待发送完毕 */
 	while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);		
 
 	return (ch);
 }
-
-///重定向c库函数scanf到串口，重写向后可使用scanf、getchar等函数
 int fgetc(FILE *f)
 {
-	/* 等待串口输入数据 */
 	while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
 
 	return (int)USART_ReceiveData(USART1);
