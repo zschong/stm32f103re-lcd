@@ -41,4 +41,6 @@ void X10ResponseSetOffset(X10ResponseContext*, uint16_t);
 void X10ResponseSetCount(X10ResponseContext*, uint16_t);
 void X10ResponseSetCrc(X10ResponseContext*, uint16_t);
 
+void X10ResponseShowContext(X10ResponseContext*);
+
 #endif//__X10_RESPONSE_H__

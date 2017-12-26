@@ -48,4 +48,6 @@ void X10RequestSetBcount(X10RequestContext*, uint8_t);
 void X10RequestSetData(X10RequestContext*, uint8_t, uint16_t);
 void X10RequestSetCrc(X10RequestContext*, uint16_t);
 
+void X10RequestShowContext(X10RequestContext*);
+
 #endif//__X10_REQUEST_H__

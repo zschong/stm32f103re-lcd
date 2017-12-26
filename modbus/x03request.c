@@ -89,6 +89,18 @@ void X03RequestSetCrc(X03RequestContext* ctx, uint16_t crc)
 	ctx->data[ (X03RequestIndexCrc1) ] = (crc >> 8);
 }
 
+void X03RequestShowContext(X03RequestContext* ctx)
+{
+	int i = 0;
+	int len = X03RequestGetLength(ctx);
+
+	printf("X03Request:[");
+	for(i = 0; i < len; i++)
+	{
+		printf("%02X ", ctx->data[i]);
+	}
+	printf("\b].check(%d)\n", X03RequestCheck(ctx));
+}
 
 #ifdef TEST_X03REQUEST
 int main(void)
@@ -101,15 +113,7 @@ int main(void)
 	X03RequestSetCount(&ctx, 0x0001);
 	X03RequestSetCrc(&ctx, X03RequestCalcCrc(&ctx));
 
-	int i = 0;
-	int len = X03RequestGetLength(&ctx);
-
-	printf("X03Request:[");
-	for(i = 0; i < len; i++)
-	{
-		printf("%02X ", ctx.data[i]);
-	}
-	printf("\b].check(%d)\n", X03RequestCheck(&ctx));
+	X03RequestShowContext(&ctx);
 
 	return 0;
 }

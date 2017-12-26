@@ -26,10 +26,13 @@ uint16_t X03ResponseGetData(X03ResponseContext*, uint8_t);
 uint16_t X03ResponseCalcCrc(X03ResponseContext*);
 uint16_t X03ResponseGetCrc(X03ResponseContext*);
 uint8_t  X03ResponseGetLength(X03ResponseContext*);
+
 void X03ResponseSetSlave(X03ResponseContext*, uint8_t);
 void X03ResponseSetFcode(X03ResponseContext*, uint8_t);
 void X03ResponseSetBcount(X03ResponseContext*, uint8_t);
 void X03ResponseSetData(X03ResponseContext*, uint8_t, uint16_t);
 void X03ResponseSetCrc(X03ResponseContext*, uint16_t);
+
+void X03ResponseShowContext(X03ResponseContext*);
 
 #endif//__X03_RESPONSE_H__

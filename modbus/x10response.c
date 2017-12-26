@@ -85,6 +85,21 @@ void X10ResponseSetCrc(X10ResponseContext* ctx, uint16_t s)
 	ctx->data[ (X10ResponseIndexMax - 1) ] = (s >> 8);
 }
 
+void X10ResponseShowContext(X10ResponseContext* ctx)
+{
+	uint8_t i = 0;
+	uint8_t len = X10ResponseGetLength(ctx);
+
+	printf("X10Response:[");
+	for(i = 0; i < len; i++)
+	{
+		printf("%02X ", ctx->data[i]);
+	}
+	printf("\b].check(%d)\n", X10ResponseCheck(ctx));
+
+
+}
+
 #ifdef TEST_X10RESPONSE
 int main(void)
 {
@@ -96,15 +111,7 @@ int main(void)
 	X10ResponseSetCount(&ctx, 0x0001);
 	X10ResponseSetCrc(&ctx, X10ResponseCalcCrc(&ctx));
 
-	uint8_t i = 0;
-	uint8_t len = X10ResponseGetLength(&ctx);
-
-	printf("X10Response:[");
-	for(i = 0; i < len; i++)
-	{
-		printf("%02X ", ctx.data[i]);
-	}
-	printf("\b].check(%d)\n", X10ResponseCheck(&ctx));
+	X10ResponseShowContext(&ctx);
 
 	return 0;
 }

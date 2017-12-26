@@ -102,6 +102,18 @@ void X03ResponseSetCrc(X03ResponseContext* ctx, uint16_t crc)
 	ctx->data[len - 2] = (crc >> 0);
 }
 
+void X03ResponseShowContext(X03ResponseContext* ctx)
+{
+	int i = 0;
+	int len = X03ResponseGetLength(ctx);
+
+	printf("X03Response:[");
+	for(i = 0; i < len; i++)
+	{
+		printf("%02X ", ctx->data[i]);
+	}
+	printf("\b].check(%d)\n", X03ResponseCheck(ctx));
+}
 
 #ifdef TEST_X03RESPONSE
 int main(void)
@@ -114,15 +126,7 @@ int main(void)
 	X03ResponseSetData(&ctx, 1, 0x0017);
 	X03ResponseSetCrc(&ctx, X03ResponseCalcCrc(&ctx));
 
-	int i = 0;
-	int len = X03ResponseGetLength(&ctx);
-
-	printf("X03Response:[");
-	for(i = 0; i < len; i++)
-	{
-		printf("%02X ", ctx.data[i]);
-	}
-	printf("\b].check(%d)\n", X03ResponseCheck(&ctx));
+	X03ResponseShowContext(&ctx);
 
 	return 0;
 }

@@ -115,6 +115,19 @@ void X10RequestSetCrc(X10RequestContext* ctx, uint16_t s)
 	ctx->data[ (X10RequestIndexData + len + 1) ] = (s >> 8);
 }
 
+void X10RequestShowContext(X10RequestContext* ctx)
+{
+	uint8_t i = 0;
+	uint8_t len = X10RequestGetLength(ctx);
+
+	printf("X10Request:[");
+	for(i = 0; i < len; i++)
+	{
+		printf("%02X ", ctx->data[i]);
+	}
+	printf("\b].check(%d)\n", X10RequestCheck(ctx));
+}
+
 #ifdef TEST_X10REQUEST
 int main(void)
 {
@@ -128,15 +141,7 @@ int main(void)
 	X10RequestSetData(&ctx, 1, 0x1234);
 	X10RequestSetCrc(&ctx, X10RequestCalcCrc(&ctx));
 
-	uint8_t i = 0;
-	uint8_t len = X10RequestGetLength(&ctx);
-
-	printf("X10Request:[");
-	for(i = 0; i < len; i++)
-	{
-		printf("%02X ", ctx.data[i]);
-	}
-	printf("\b].check(%d)\n", X10RequestCheck(&ctx));
+	X10RequestShowContext(&ctx);
 
 	return 0;
 }

@@ -40,4 +40,6 @@ void X03RequestSetOffset(X03RequestContext*, uint16_t);
 void X03RequestSetCount(X03RequestContext*, uint16_t);
 void X03RequestSetCrc(X03RequestContext*, uint16_t);
 
+void X03RequestShowContext(X03RequestContext*);
+
 #endif//__X03_REQUEST_H__
