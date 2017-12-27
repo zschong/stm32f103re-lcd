@@ -15,9 +15,11 @@ typedef enum {
 	ModbusFcodeX10 = 0x10,
 }ModbusFcodeType;
 
+void ModbusInit(void);
 void ModbusPush(uint8_t);
 void ModbusSetSelfMac(uint8_t);
-uint8_t ModbusCheck(void);
+uint8_t ModbusCheckRequest(void);
+uint8_t ModbusCheckResponse(void);
 uint8_t ModbusGetLength(void);
 X03RequestContext* ModbusGetX03RequestContext(void);
 X03ResponseContext* ModbusGetX03ResponseContext(void);

@@ -49,7 +49,6 @@ uint16_t X10ResponseCalcCrc(X10ResponseContext* ctx)
 uint16_t X10ResponseGetCrc(X10ResponseContext* ctx)
 {
 	uint16_t crc = 0;
-	uint16_t len = X10ResponseGetCount(ctx) * 2;
 
 	crc += (ctx->data[ (X10ResponseIndexMax - 2) ] << 0);
 	crc += (ctx->data[ (X10ResponseIndexMax - 1) ] << 8);
