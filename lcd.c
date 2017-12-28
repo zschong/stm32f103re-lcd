@@ -580,3 +580,21 @@ void LcdLinePrintf(int ln, const char *fmt,...)
 	LcdDrawRetangleFill(0, ln*20, 319, ln*20+19, GRAY(28));
 	LcdTextColorZoom(0, ln*20+2, BLACK, 1, buf, strlen(buf));
 }
+void LcdLinePrintHex(int ln, uint8_t *data, int len)
+{
+	char buf[40], *p = buf;
+
+	for(int i = 0; buf && i < len; i++)
+	{
+		snprintf(p, 4, "%02X ", data[i]);
+		p += 3;
+		if( p - buf >=  sizeof(buf) )
+		{
+			break;
+		}
+	}
+	if( p - buf > 0 )
+	{
+		LcdLinePrintf(ln, buf);
+	}
+}

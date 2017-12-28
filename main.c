@@ -179,6 +179,7 @@ int main(void)
 	KeyboardInit();
 	LcdTouchInit();
 	FlashInit();
+	ServiceInit();
 
 	while(1)
 	{

@@ -246,14 +246,19 @@ void TestX03Response(X03ResponseContext* x)
 }
 void TestX10Request(X10RequestContext* x)
 {
-	X10RequestSetSlave(x, 0x03);
+	X10RequestSetSlave(x, 0x01);
 	X10RequestSetFcode(x, 0x10);
 	X10RequestSetOffset(x, 0x1234);
-	X10RequestSetCount(x, 0x0003);
-	X10RequestSetBcount(x, 0x06);
+	X10RequestSetCount(x, 0x0008);
+	X10RequestSetBcount(x, 0x0010);
 	X10RequestSetData(x, 1, 0x5678);
 	X10RequestSetData(x, 2, 0x9ABC);
-	X10RequestSetData(x, 3, 0xDEF0);
+	X10RequestSetData(x, 3, 0x6C40);
+	X10RequestSetData(x, 4, 0x7A50);
+	X10RequestSetData(x, 5, 0x8830);
+	X10RequestSetData(x, 6, 0x9290);
+	X10RequestSetData(x, 7, 0xA05A);
+	X10RequestSetData(x, 8, 0xB281);
 	X10RequestSetCrc(x, X10RequestCalcCrc(x));
 	X10RequestShowContext(x);
 }

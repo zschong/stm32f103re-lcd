@@ -6,15 +6,20 @@ static ModbusContext context;
 
 static void ServiceX03Request(X03RequestContext* x)
 {
+	UsartSend(USART1, x->data, X03RequestGetLength(x));
 	LcdLinePrintf(1, "%s", __func__);
+	LcdLinePrintHex(2, x->data, X03RequestGetLength(x));
 }
 static void ServiceX10Request(X10RequestContext* x)
 {
-	LcdLinePrintf(2, "%s", __func__);
+	UsartSend(USART1, x->data, X10RequestGetLength(x));
+	LcdLinePrintf(3, "%s", __func__);
+	LcdLinePrintHex(4, x->data, X10RequestGetLength(x));
 }
 void ServiceInit(void)
 {
 	ModbusInit(&context);
+	ModbusSetMac(&context, 0x01);
 }
 void ServiceRun(void)
 {
@@ -39,4 +44,5 @@ void ServiceRun(void)
 			ServiceX10Request( ModbusGetX10RequestContext(&context) );
 			break;
 	}
+	ServiceInit();
 }

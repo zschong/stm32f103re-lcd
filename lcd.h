@@ -234,5 +234,6 @@ void LcdTouchInit(void);
 bool LcdTouchXY(u16* x, u16* y);
 bool LcdTouch(u16 *x, u16 *y);
 void LcdLinePrintf(int i, const char *fmt, ...);
+void LcdLinePrintHex(int i, uint8_t *data, int len); 
 
 #endif//__LCD_H__

@@ -30,6 +30,7 @@ uint16_t X03RequestGetOffset(X03RequestContext*);
 uint16_t X03RequestGetCount(X03RequestContext*);
 uint16_t X03RequestCalcCrc(X03RequestContext*);
 uint16_t X03RequestGetCrc(X03RequestContext*);
+uint8_t  X03RequestGetLength(X03RequestContext*);
 
 void X03RequestSetSlave(X03RequestContext*, uint8_t);
 void X03RequestSetFcode(X03RequestContext*, uint8_t);

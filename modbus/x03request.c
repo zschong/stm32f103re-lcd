@@ -53,7 +53,7 @@ uint16_t X03RequestGetCrc(X03RequestContext* ctx)
 	crc += (ctx->data[ (X03RequestIndexCrc1) ] << 8);
 	return crc;
 }
-uint16_t X03RequestGetLength(X03RequestContext* ctx)
+uint8_t X03RequestGetLength(X03RequestContext* ctx)
 {
 	return X03RequestIndexMax;
 }
