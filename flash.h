@@ -6,9 +6,6 @@
 #define CLK		PB13
 #define MISO	PB14
 #define MOSI	PB15
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int   uint32_t;
 
 #define FLASH_CHIP_SIZE			(8<<20)//8M
 #define FLASH_PAGE_SIZE			(1<<8)//256

@@ -1,6 +1,7 @@
 #ifndef __X03_RESPONSE_H__
 #define __X03_RESPONSE_H__
 #include "x03request.h"
+#include "typedef.h"
 
 
 typedef enum{

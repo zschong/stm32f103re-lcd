@@ -71,4 +71,3 @@ unsigned short __crc_modbus(unsigned char *data, int len)
     }
     return ( (unsigned short)(hig << 8) | (unsigned short)(low & 0xff) );
 }
-

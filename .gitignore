@@ -1,3 +1,7 @@
 *.o
+*.a
 *.swp
+*.swo
+*.exe
+a.out
 tags

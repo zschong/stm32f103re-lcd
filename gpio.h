@@ -1,14 +1,8 @@
 #ifndef __GPIO_H__
 #define __GPIO_H__
+#include "typedef.h"
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
-
-#define false	0
-#define	true	1
-#define u8		uint8_t
-#define u16		uint16_t
-#define u32		uint32_t
-#define bool	uint32_t
 
 typedef enum
 {

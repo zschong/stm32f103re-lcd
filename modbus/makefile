@@ -1,5 +1,7 @@
 ARCH :=
 CC := $(ARCH)gcc
+SRC := $(wildcard *.c)
+OBJ := $(patsubst %.c, %.o, $(SRC))
 TARGET := X03Request.exe X03Response.exe
 TARGET += X10Request.exe X10Response.exe
 TARGET += modbus.exe
@@ -20,5 +22,7 @@ X10Response.exe: x10response.c crc16.c
 	$(CC) $+ -DTEST_X10RESPONSE -o $@
 modbus.exe: modbus.c x03request.c x03response.c x10request.c x10response.c crc16.c
 	$(CC) $+ -DTEST_MODBUS -o $@
+.c.o:$(wildcard *.h)
+	$(CC) -c $*.c -o $*.o
 clean:
 	@rm -rvf *.exe *.o

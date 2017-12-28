@@ -14,16 +14,22 @@ typedef enum {
 	ModbusFcodeX03 = 0x03,
 	ModbusFcodeX10 = 0x10,
 }ModbusFcodeType;
+typedef struct {
+	uint8_t mac;
+	uint8_t index;
+	uint8_t buffer[256];
+}ModbusContext;
 
-void ModbusInit(void);
-void ModbusPush(uint8_t);
-void ModbusSetSelfMac(uint8_t);
-uint8_t ModbusCheckRequest(void);
-uint8_t ModbusCheckResponse(void);
-uint8_t ModbusGetLength(void);
-X03RequestContext* ModbusGetX03RequestContext(void);
-X03ResponseContext* ModbusGetX03ResponseContext(void);
-X10RequestContext* ModbusGetX10RequestContext(void);
-X10ResponseContext* ModbusGetX10ResponseContext(void);
+void ModbusInit(ModbusContext*);
+void ModbusPush(ModbusContext*, uint8_t);
+void ModbusSetMac(ModbusContext*, uint8_t);
+uint8_t ModbusCheckRequest(ModbusContext*);
+uint8_t ModbusCheckResponse(ModbusContext*);
+uint8_t ModbusGetLength(ModbusContext*);
+uint8_t ModbusGetFcode(ModbusContext*);
+X03RequestContext* ModbusGetX03RequestContext(ModbusContext*);
+X03ResponseContext* ModbusGetX03ResponseContext(ModbusContext*);
+X10RequestContext* ModbusGetX10RequestContext(ModbusContext*);
+X10ResponseContext* ModbusGetX10ResponseContext(ModbusContext*);
 
 #endif//__MODBUS_H__

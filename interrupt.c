@@ -24,44 +24,20 @@ void PendSV_Handler(void)
 {
 }
 
-
+//USART
 void USART1_IRQHandler(void)
 {
-	if( USART_GetITStatus(USART1, USART_IT_RXNE) != RESET )
-	{
-		char ch = USART_ReceiveData(USART1);
-		USART_SendData(USART1, ch);
-	}
+	UsartInterruptHandler1();
 }
 void USART2_IRQHandler(void)
 {
-	if( USART_GetITStatus(USART2, USART_IT_RXNE) != RESET )
-	{
-		char ch = USART_ReceiveData(USART2);
-		USART_SendData(USART2, ch);
-	}
 }
 void USART3_IRQHandler(void)
 {
-	if( USART_GetITStatus(USART3, USART_IT_RXNE) != RESET )
-	{
-		char ch = USART_ReceiveData(USART3);
-		USART_SendData(USART3, ch);
-	}
 }
 void UART4_IRQHandler(void)
 {
-	if( USART_GetITStatus(UART4, USART_IT_RXNE) != RESET )
-	{
-		char ch = USART_ReceiveData(UART4);
-		USART_SendData(UART4, ch);
-	}
 }
 void UART5_IRQHandler(void)
 {
-	if( USART_GetITStatus(UART5, USART_IT_RXNE) != RESET )
-	{
-		char ch = USART_ReceiveData(UART5);
-		USART_SendData(UART5, ch);
-	}
 }

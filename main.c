@@ -12,6 +12,7 @@
 #include "keyboard.h"
 #include "screen.h"
 #include "flash.h"
+#include "service.h"
 #include "filesystem.h"
 
 
@@ -165,20 +166,6 @@ void FlashTest(void)
 		}
 	}
 }
-void TestCrc(void)
-{
-	PacketPush(0x55);
-	PacketPush(0xFF);
-	PacketPush(0x01);
-	PacketPush(0x12);
-	PacketPush(0x22);
-	PacketPush(0x32);
-	PacketPush(0x00);
-	PacketPush(0x00);
-	uint16_t crc = PacketCaclCrc();
-	uint8_t *p = PacketData();
-	uint8_t len = PacketLength();
-}
 /*------------end of test -----------*/
 
 int main(void)
@@ -207,8 +194,7 @@ int main(void)
 		//LcdTouchTest();
 		//KeyboardTest();
 		WindowScan();
-		FlashTest();
-		TestCrc();
-		Printf("%s", __func__);
+		//FlashTest();
+		ServiceRun();
 	}
 }

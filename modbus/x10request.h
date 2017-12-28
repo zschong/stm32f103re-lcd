@@ -1,9 +1,6 @@
 #ifndef __X10_REQUEST_H__
 #define __X10_REQUEST_H__
-
-typedef unsigned char  uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned short uint32_t;
+#include "typedef.h"
 
 typedef enum{
 	X10RequestIndexSlave = 0,
